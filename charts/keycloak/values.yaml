@@ -12,3 +12,8 @@
     hosts:
       - keycloak.example.net
     secretName: benco-io-cert
+    
+command:
+  - "/opt/keycloak/bin/kc.sh"
+args:
+  - "start-dev"
