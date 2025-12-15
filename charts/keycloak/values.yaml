@@ -8,6 +8,7 @@
         - path: /
           pathType: Prefix
   tls:
-    - hosts:
-        - keycloak.example.net
-      secretName: benco-io-cert
+    enabled: false
+    hosts:
+      - keycloak.example.net
+    secretName: benco-io-cert
