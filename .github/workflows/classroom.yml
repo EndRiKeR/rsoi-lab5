@@ -67,6 +67,18 @@ jobs:
           echo "|"
           echo "=== Installing Helm ==="
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+          echo "|"
+          echo "|"
+          echo "=== Configuring YC CLI ==="
+          yc config set token "${{ secrets.YC_OAUTH_TOKEN }}"
+          yc config set folder-id "b1g1ok9v2ph2i9k05bot"
+          yc container registry configure-docker
+
+          echo "|"
+          echo "|"
+          echo "=== Getting kubeconfig ==="
+          yc managed-kubernetes cluster get-credentials rsoi-kuber --external
           
           echo "|"
           echo "|"
@@ -82,18 +94,6 @@ jobs:
             -f ./charts/keycloak/values.yaml
             --set keycloak.username=admin \
             --set keycloak.password=admin
-
-          echo "|"
-          echo "|"
-          echo "=== Configuring YC CLI ==="
-          yc config set token "${{ secrets.YC_OAUTH_TOKEN }}"
-          yc config set folder-id "b1g1ok9v2ph2i9k05bot"
-          yc container registry configure-docker
-
-          echo "|"
-          echo "|"
-          echo "=== Getting kubeconfig ==="
-          yc managed-kubernetes cluster get-credentials rsoi-kuber --external
 
           echo "|"
           echo "|"
