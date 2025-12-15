@@ -13,6 +13,19 @@ keycloak:
   healthCheckPath: /auth/realms/master
   hostnamePath: auth
   
+env:
+  - name: KC_DB
+    value: postgres
+  - name: KC_DB_URL
+    value: jdbc:postgresql://postgres:5432/keycloak-postgres
+  - name: KC_DB_USERNAME
+    value: postgres
+  - name: KC_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: postgres
+        key: postgres
+  
 database:
   passwordSecret:
     name: postgres
