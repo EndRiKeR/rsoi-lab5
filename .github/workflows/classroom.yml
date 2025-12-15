@@ -91,7 +91,6 @@ jobs:
           echo "=== Deploying Keycloak ==="
           helm upgrade mykeycloak keycloak/keycloak --install \
             --namespace keycloak
-            -f ./charts/keycloak/values.yaml
             --set keycloak.username=user \
             --set keycloak.password=user
 
