@@ -12,6 +12,14 @@ keycloak:
   adminUser: admin
   healthCheckPath: /auth/realms/master
   hostnamePath: auth
+  
+database:
+  passwordSecret:
+    name: postgres
+    key: postgres
+  username: "postgres"
+  host: "postgres"
+  databaseName: "keycloak-postgres"
 
 ingress:
   enabled: true
