@@ -29,3 +29,6 @@ resources:
 ingress:
   enabled: true
   host: keycloak.example.net
+  tls:
+    enabled: true
+    secretName: benco-io-cert
