@@ -82,6 +82,12 @@ jobs:
           
           echo "|"
           echo "|"
+          echo "=== Add Keycloak Repo ==="
+          helm repo add keycloak https://benc-uk.github.io/keycloak-helm
+          helm repo update keycloak
+          
+          echo "|"
+          echo "|"
           echo "=== Deploying Keycloak ==="
           helm upgrade mykeycloak keycloak/keycloak --install \
             --namespace keycloak
