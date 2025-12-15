@@ -90,7 +90,8 @@ jobs:
           echo "|"
           echo "=== Deploying Keycloak ==="
           helm upgrade mykeycloak keycloak/keycloak --install \
-            --namespace keycloak
+            --namespace keycloak \
+            -f ./charts/keycloak/values.yaml \
             --set keycloak.username=user \
             --set keycloak.password=user
 
