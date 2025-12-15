@@ -28,7 +28,14 @@ resources:
 
 ingress:
   enabled: true
-  host: keycloak.example.net
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: keycloak.example.net
+      paths:
+        - path: /
+          pathType: Prefix
   tls:
-    enabled: true
-    secretName: benco-io-cert
+    - hosts:
+        - keycloak.example.net
+      secretName: benco-io-cert

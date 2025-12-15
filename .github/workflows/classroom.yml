@@ -8,16 +8,6 @@ on:
       - master
 
 jobs:
-  build:
-    name: Autograding
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - uses: docker/setup-buildx-action@v2
-        
   build-images:
     name: Send images to Yandex Container Registry
     runs-on: ubuntu-latest
@@ -42,12 +32,12 @@ jobs:
           docker build -t cr.yandex/${{ secrets.YC_CR_ID }}/tickets-service:latest -f ./services/TicketsService/Dockerfile .
           docker build -t cr.yandex/${{ secrets.YC_CR_ID }}/bonus-service:latest -f ./services/BonusService/Dockerfile .
           docker build -t cr.yandex/${{ secrets.YC_CR_ID }}/flight-service:latest -f ./services/FlightService/Dockerfile .
-          
+
           docker push cr.yandex/${{ secrets.YC_CR_ID }}/gateway-service:latest
           docker push cr.yandex/${{ secrets.YC_CR_ID }}/tickets-service:latest
           docker push cr.yandex/${{ secrets.YC_CR_ID }}/bonus-service:latest
           docker push cr.yandex/${{ secrets.YC_CR_ID }}/flight-service:latest
-
+  
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -81,8 +71,17 @@ jobs:
           echo "|"
           echo "|"
           echo "=== Deploying Keycloak ==="
+          
+          kubectl create namespace keycloak
+          
           helm repo add keycloak https://benc-uk.github.io/keycloak-helm
           helm repo update keycloak
+          
+          helm upgrade mykeycloak keycloak/keycloak --install \
+            --namespace keycloak
+            -f ./charts/keycloak/values.yaml
+            --set keycloak.username=admin \
+            --set keycloak.password=admin
 
           echo "|"
           echo "|"
@@ -99,7 +98,10 @@ jobs:
           echo "|"
           echo "|"
           echo "=== Deploying Postgres ==="
-          helm upgrade postgres ./charts/postgres --install -n test -f ./charts/postgres/values.yaml
+          helm upgrade postgres ./charts/postgres --install \
+            -n test \
+            -f ./charts/postgres/values.yaml
+          
           kubectl apply -f ./charts/postgres/templates/config-map.yaml -n test
 
           echo "|"
