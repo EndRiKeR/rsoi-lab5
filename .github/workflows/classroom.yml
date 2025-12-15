@@ -89,8 +89,13 @@ jobs:
           echo "|"
           echo "|"
           echo "=== Deploying Keycloak ==="
+          
+          kubectl create secret generic postgres \
+            -n test \
+            --from-literal=postgres=postgres
+          
           helm upgrade mykeycloak keycloak/keycloak --install \
-            --namespace keycloak \
+            --namespace test \
             -f ./charts/keycloak/values.yaml \
             --set keycloak.username=user \
             --set keycloak.password=user
