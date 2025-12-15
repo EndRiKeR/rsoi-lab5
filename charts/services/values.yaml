@@ -1,0 +1,31 @@
+imageRegistry: ""
+
+replicaCount: 1
+
+image:
+  repository: ""
+  pullPolicy: Always
+  tag: "latest"
+
+command: []
+args: []
+
+service:
+  type: ClusterIP
+  port: 8080
+
+env:
+  - name: DATABASE_URL
+    value: ""
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ingress:
+  enabled: true
+  host: keycloak.example.net
