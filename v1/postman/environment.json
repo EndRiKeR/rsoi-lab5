@@ -4,7 +4,7 @@
 	"values": [
 		{
 			"key": "serviceUrl",
-			"value": "https://endriker-rsoi-api",
+			"value": "http://localhost:8080",
 			"enabled": true
 		},
 		{
