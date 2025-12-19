@@ -14,22 +14,22 @@
 		},
 		{
 			"key": "username",
-			"value": "",
+			"value": "test@mail.com",
 			"enabled": true
 		},
 		{
 			"key": "password",
-			"value": "",
+			"value": "9Ez-hrp-m5Y-atq",
 			"enabled": true
 		},
 		{
 			"key": "clientId",
-			"value": "",
+			"value": "5mdcjQPVkVYlch6aK7NhnGxyfQhDXVx5",
 			"enabled": true
 		},
 		{
 			"key": "clientSecret",
-			"value": "",
+			"value": "jm4tedMUc5nY4UhCR_X2nVkwHH8GY34EPyhI-RRUqYndgDbzTm0j7gJ13wN7szmX",
 			"enabled": true
 		}
 	],
