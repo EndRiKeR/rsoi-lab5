@@ -37,7 +37,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"grant_type\": \"password\",\r\n    \"client_id\": \"{{clientId}}\",\r\n    \"client_secret\": \"{{clientSecret}}\",\r\n    \"username\": \"{{username}}\",\r\n    \"password\": \"{{password}}\",\r\n    \"audience\": \"https://rsoi.api.com\",\r\n    \"scope\": \"openid profile email\"\r\n}",
+							"raw": "{\r\n    \"grant_type\": \"password\",\r\n    \"client_id\": \"{{clientId}}\",\r\n    \"client_secret\": \"{{clientSecret}}\",\r\n    \"username\": \"{{username}}\",\r\n    \"password\": \"{{password}}\",\r\n    \"audience\": \"https://endriker-rsoi-api.com\",\r\n    \"scope\": \"openid profile email\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
