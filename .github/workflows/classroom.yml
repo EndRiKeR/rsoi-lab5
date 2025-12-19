@@ -79,26 +79,6 @@ jobs:
           echo "|"
           echo "=== Getting kubeconfig ==="
           yc managed-kubernetes cluster get-credentials rsoi-kuber --external
-          
-          echo "|"
-          echo "|"
-          echo "=== Add Keycloak Repo ==="
-          helm repo add keycloak https://benc-uk.github.io/keycloak-helm
-          helm repo update keycloak
-          
-          echo "|"
-          echo "|"
-          echo "=== Deploying Keycloak ==="
-          
-          kubectl create secret generic postgres \
-            -n test \
-            --from-literal=postgres=postgres
-          
-          helm upgrade mykeycloak keycloak/keycloak --install \
-            --namespace test \
-            -f ./charts/keycloak/values.yaml \
-            --set keycloak.username=user \
-            --set keycloak.password=user
 
           echo "|"
           echo "|"
