@@ -1,6 +1,7 @@
 using FlightService.Database;
 using FlightService.Database.Repositories;
 using FlightService.Database.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://dev-xtn38r72lorhw2oz.us.auth0.com/api/v2/";
+        options.Audience = "https://endriker-rsoi-api";
+        options.RequireHttpsMetadata = true;
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddHttpClient("Gateway", client =>
 {
@@ -54,6 +65,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

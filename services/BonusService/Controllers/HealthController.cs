@@ -1,4 +1,5 @@
 ﻿using BonusService.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,8 @@ namespace BonusService.Controllers
         {
             _dbContext = dbContext;
         }
-
+        
+        [AllowAnonymous]
         [HttpGet("health")]
         public async Task<IActionResult> HealthCheck()
         {

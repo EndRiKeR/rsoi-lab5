@@ -1,10 +1,11 @@
-﻿using Common.DtoModels.BonusServiceDto;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Common.DtoModels.ErrorDto;
 using Common.DtoModels.TicketsServiceDto;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using Common.DtoModels.FlightServiceDto;
-using Common.Errors;
+using Microsoft.AspNetCore.Authorization;
 using TicketsService.Database.Enums;
 using TicketsService.Database.Models;
 using TicketsService.Database.Repositories.Interfaces;
@@ -13,6 +14,7 @@ namespace TicketsService.Controllers
 {
     [ApiController]
     [Route("api/v1/tickets")]
+    [Authorize]
     public class TicketsController : ControllerBase
     {
         private readonly ITicketRepository _ticketRepository;
@@ -29,17 +31,14 @@ namespace TicketsService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var usernameValues))
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
-                
-                var username = usernameValues[0];
+                var username = GetUsernameFromToken();
                 var allTickets = await _ticketRepository.GetAll();
                 var userTickets = allTickets.Where(t => t.Username == username).ToList();
 
                 List<TicketResponse> ticketResponses = new();
                 foreach (var userTicket in userTickets)
                 {
-                    var flightData = await GetFlightByNumber(userTicket.FlightNumber);
+                    var flightData = await GetFlightByNumber(userTicket.FlightNumber, Request.Headers["Authorization"].FirstOrDefault());
                     ticketResponses.Add(new TicketResponse
                     {
                         TicketUid = userTicket.TicketUid,
@@ -65,18 +64,15 @@ namespace TicketsService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var username))
-                {
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
-                }
+                var username = GetUsernameFromToken();
                 
                 var allTickets = await _ticketRepository.GetAll();
-                var ticket = allTickets.FirstOrDefault(t => t.TicketUid == ticketUid && t.Username == username.ToString());
+                var ticket = allTickets.FirstOrDefault(t => t.TicketUid == ticketUid && t.Username == username);
                 
                 if (ticket == null)
                     return NotFound(new ErrorResponse { Message = "Ticket not found" });
                 
-                var flightData = await GetFlightByNumber(ticket.FlightNumber);
+                var flightData = await GetFlightByNumber(ticket.FlightNumber, GetToken());
                 
                 var response = new TicketResponse
                 {
@@ -140,8 +136,7 @@ namespace TicketsService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var username))
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
+                var username = GetUsernameFromToken();
                 
                 var usernameValue = username.ToString();
                 var allTickets = await _ticketRepository.GetAll();
@@ -161,9 +156,11 @@ namespace TicketsService.Controllers
             }
         }
         
-        private async Task<FlightResponse> GetFlightByNumber(string flightNumber)
+        private async Task<FlightResponse> GetFlightByNumber(string flightNumber, string token)
         {
             var flightRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/flights/{flightNumber}");
+            flightRequest.Headers.Add("Authorization", token);
+            
             var flightResponse = await _gatewayClient.SendAsync(flightRequest);
 
             if (!flightResponse.IsSuccessStatusCode)
@@ -175,6 +172,29 @@ namespace TicketsService.Controllers
             Console.WriteLine(content);
                 
             return flight;
+        }
+        
+        private string GetUsernameFromToken()
+        {
+            var usernameClaim = User.FindFirst("preferred_username") ?? 
+                                User.FindFirst(ClaimTypes.Name) ??
+                                User.FindFirst(ClaimTypes.NameIdentifier) ?? 
+                                User.FindFirst(JwtRegisteredClaimNames.Sub) ??
+                                User.FindFirst("email") ??
+                                User.FindFirst("upn");
+    
+            if (usernameClaim == null)
+                throw new UnauthorizedAccessException("User not found in token claims");
+    
+            return usernameClaim.Value;
+        }
+        
+        private string GetToken()
+        {
+            if (!Request.Headers.TryGetValue("Authorization", out var token) || token.Count < 1 || token[0] is null)
+                throw new UnauthorizedAccessException("No token");
+            
+            return token[0];
         }
     }
 }

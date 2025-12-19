@@ -4,7 +4,6 @@ using BonusService.Database.Repositories;
 using FlightService.Database;
 using FlightService.Database.Models;
 using FlightService.Database.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using Moq.EntityFrameworkCore;
 using TicketsService.Database;

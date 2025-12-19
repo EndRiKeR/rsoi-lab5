@@ -1,8 +1,6 @@
-using System.Security.Cryptography.X509Certificates;
 using Common.DtoModels.BonusServiceDto;
 using Common.DtoModels.FlightServiceDto;
 using Common.DtoModels.TicketsServiceDto;
-using Microsoft.Extensions.Primitives;
 
 namespace Common.Fallbacks;
 

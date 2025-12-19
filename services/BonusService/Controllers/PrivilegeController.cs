@@ -1,14 +1,18 @@
-﻿using BonusService.Controllers.ControllerModels;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using BonusService.Controllers.ControllerModels;
 using BonusService.Database.Models;
 using BonusService.Database.Repositories.Interfaces;
 using Common.DtoModels.BonusServiceDto;
 using Common.DtoModels.ErrorDto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BonusService.Controllers
 {
     [ApiController]
     [Route("api/v1/privilege")]
+    [Authorize]
     public class PrivilegeController : ControllerBase
     {
         private readonly IPrivilegeRepository _privilegeRepository;
@@ -27,21 +31,18 @@ namespace BonusService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var username))
-                {
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
-                }
+                var username = GetUsernameFromToken();
                 
                 Privilege privilege;
                 try
                 {
-                    privilege = await _privilegeRepository.GetByUsername(username.ToString());
+                    privilege = await _privilegeRepository.GetByUsername(username);
                 }
                 catch (Exception)
                 {
                     privilege = new Privilege
                     {
-                        Username = username.ToString(),
+                        Username = username,
                         Status = "BRONZE",
                         Balance = 0
                     };
@@ -78,12 +79,8 @@ namespace BonusService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var usernameValues))
-                {
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
-                }
+                var username = GetUsernameFromToken();
                 
-                var username = usernameValues[0];
                 PrivilegeDto privilege;
 
                 if (await _privilegeRepository.ExistsByUsername(username))
@@ -127,11 +124,9 @@ namespace BonusService.Controllers
         {
             try
             {
-                if (!Request.Headers.TryGetValue("X-User-Name", out var usernameValues))
-                    return BadRequest(new ErrorResponse { Message = "X-User-Name header is required" });
-
+                var username = GetUsernameFromToken();
                 var history = (await _privilegeHistoryRepository.GetByTicketUid(request.TicketUid))[^1];
-                var username = usernameValues[0];
+                
                 PrivilegeDto privilege = new PrivilegeDto(await _privilegeRepository.GetByUsername(username));
                 
                 await _privilegeRepository.UpdateBalance(privilege.Id, -history.BalanceDiff);
@@ -142,6 +137,21 @@ namespace BonusService.Controllers
             {
                 return StatusCode(500, new ErrorResponse { Message = ex.Message });
             }
+        }
+        
+        private string GetUsernameFromToken()
+        {
+            var usernameClaim = User.FindFirst("preferred_username") ?? 
+                                User.FindFirst(ClaimTypes.Name) ??
+                                User.FindFirst(ClaimTypes.NameIdentifier) ?? 
+                                User.FindFirst(JwtRegisteredClaimNames.Sub) ??
+                                User.FindFirst("email") ??
+                                User.FindFirst("upn");
+    
+            if (usernameClaim == null)
+                throw new UnauthorizedAccessException("User not found in token claims");
+    
+            return usernameClaim.Value;
         }
     }
 }

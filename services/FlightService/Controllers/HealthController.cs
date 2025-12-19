@@ -1,4 +1,5 @@
 ﻿using FlightService.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ namespace FlightService.Controllers
             _dbContext = dbContext;
         }
 
+        [AllowAnonymous]
         [HttpGet("health")]
         public async Task<IActionResult> HealthCheck()
         {

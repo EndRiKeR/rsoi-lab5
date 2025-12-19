@@ -2,12 +2,14 @@
 using Common.DtoModels.FlightServiceDto;
 using FlightService.Database.Models;
 using FlightService.Database.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightService.Controllers
 {
     [ApiController]
     [Route("api/v1/flights")]
+    [Authorize]
     public class FlightsController : ControllerBase
     {
         private readonly IFlightRepository _flightRepository;

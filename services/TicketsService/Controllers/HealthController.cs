@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TicketsService.Database;
 
@@ -15,6 +16,7 @@ namespace TicketsService.Controllers
             _dbContext = dbContext;
         }
 
+        [AllowAnonymous]
         [HttpGet("health")]
         public async Task<IActionResult> HealthCheck()
         {
