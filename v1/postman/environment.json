@@ -9,7 +9,7 @@
 		},
 		{
 			"key": "identityProviderUrl",
-			"value": "https://dev-xtn38r72lorhw2oz.us.auth0.com/api/v2/",
+			"value": "https://dev-xtn38r72lorhw2oz.us.auth0.com",
 			"enabled": true
 		},
 		{
