@@ -4,12 +4,12 @@
 	"values": [
 		{
 			"key": "serviceUrl",
-			"value": "",
+			"value": "https://endriker-rsoi-api",
 			"enabled": true
 		},
 		{
 			"key": "identityProviderUrl",
-			"value": "https://dev-xtn38r72lorhw2oz.us.auth0.com",
+			"value": "https://dev-xtn38r72lorhw2oz.us.auth0.com/api/v2/",
 			"enabled": true
 		},
 		{
