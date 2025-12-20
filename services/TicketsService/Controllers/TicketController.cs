@@ -65,8 +65,6 @@ namespace TicketsService.Controllers
             try
             {
                 var username = GetUsernameFromToken();
-                
-                                
                 var authHeader = Request.Headers["Authorization"].FirstOrDefault();
                 
                 var allTickets = await _ticketRepository.GetAll();

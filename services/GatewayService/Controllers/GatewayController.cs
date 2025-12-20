@@ -79,6 +79,10 @@ namespace GatewayService.Controllers
             {
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/flights/{flightNumber}");
                 
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader))
+                    request.Headers.Add("Authorization", authHeader);
+                
                 FlightResponse? response = await _circuitBreakersController.ExecuteSoftAsync(
                     Services.Flight,
                     async () => await SendRequest<FlightResponse>(_flightsClient, request),
@@ -468,7 +472,7 @@ namespace GatewayService.Controllers
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException(body, null, response.StatusCode);
+                throw new HttpRequestException(body + $"{response.StatusCode}", null, response.StatusCode);
             }
                 
             string content = await response.Content.ReadAsStringAsync();
