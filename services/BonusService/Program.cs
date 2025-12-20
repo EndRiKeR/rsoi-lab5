@@ -37,16 +37,16 @@ var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 var context = services.GetRequiredService<PrivilegeContext>();
 var pendingMigrations = context.Database.GetPendingMigrations().ToList();
-if (pendingMigrations.Any())
-{
-    Console.WriteLine($"Applying {pendingMigrations.Count} migrations...");
-    context.Database.Migrate();
-    Console.WriteLine("Migrations applied successfully");
-}
-else
-{
-    Console.WriteLine("Database is up-to-date");
-}
+// if (pendingMigrations.Any())
+// {
+//     Console.WriteLine($"Applying {pendingMigrations.Count} migrations...");
+context.Database.Migrate();
+//     Console.WriteLine("Migrations applied successfully");
+// }
+// else
+// {
+//     Console.WriteLine("Database is up-to-date");
+// }
 
 if (app.Environment.IsDevelopment())
 {
