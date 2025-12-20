@@ -12,7 +12,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/:/docker-entrypoint-initdb.d/
-      - ./postgres/scripts/:/docker-entrypoint-initdb.d/scripts/
     networks:
       - flight-booking-network
     healthcheck:

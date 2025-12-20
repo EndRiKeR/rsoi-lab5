@@ -1,0 +1,3 @@
+CREATE DATABASE flights;
+CREATE DATABASE privileges; 
+CREATE DATABASE tickets;

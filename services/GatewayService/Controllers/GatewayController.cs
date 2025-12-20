@@ -466,7 +466,10 @@ namespace GatewayService.Controllers
                 
             // ошибку обработает щиток и я не достану текст, так что нет особой разницы, что кидать
             if (!response.IsSuccessStatusCode)
-                throw new Exception(await response.Content.ReadAsStringAsync());
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(body, null, response.StatusCode);
+            }
                 
             string content = await response.Content.ReadAsStringAsync();
             T? responseModel = JsonSerializer.Deserialize<T>(content);
