@@ -66,13 +66,16 @@ namespace TicketsService.Controllers
             {
                 var username = GetUsernameFromToken();
                 
+                                
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                
                 var allTickets = await _ticketRepository.GetAll();
                 var ticket = allTickets.FirstOrDefault(t => t.TicketUid == ticketUid && t.Username == username);
                 
                 if (ticket == null)
                     return NotFound(new ErrorResponse { Message = "Ticket not found" });
                 
-                var flightData = await GetFlightByNumber(ticket.FlightNumber, GetToken());
+                var flightData = await GetFlightByNumber(ticket.FlightNumber, authHeader);
                 
                 var response = new TicketResponse
                 {
@@ -181,20 +184,13 @@ namespace TicketsService.Controllers
                                 User.FindFirst(ClaimTypes.NameIdentifier) ?? 
                                 User.FindFirst(JwtRegisteredClaimNames.Sub) ??
                                 User.FindFirst("email") ??
-                                User.FindFirst("upn");
+                                User.FindFirst("upn") ??
+                                User.FindFirst("sub");
     
             if (usernameClaim == null)
                 throw new UnauthorizedAccessException("User not found in token claims");
     
             return usernameClaim.Value;
-        }
-        
-        private string GetToken()
-        {
-            if (!Request.Headers.TryGetValue("Authorization", out var token) || token.Count < 1 || token[0] is null)
-                throw new UnauthorizedAccessException("No token");
-            
-            return token[0];
         }
     }
 }

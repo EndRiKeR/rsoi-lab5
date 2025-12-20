@@ -10,6 +10,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddAuthorization();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -17,8 +19,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Audience = "https://endriker-rsoi-api";
         options.RequireHttpsMetadata = true;
     });
-
-builder.Services.AddAuthorization();
 
 var connectionString = Environment.GetEnvironmentVariable("DOCKER_CONNECT_STRING") 
                        ?? builder.Configuration.GetConnectionString("DefaultConnection");

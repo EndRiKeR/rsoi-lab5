@@ -10,6 +10,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddAuthorization();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -18,8 +20,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.RequireHttpsMetadata = true;
     });
 
-builder.Services.AddAuthorization();
-
 builder.Services.AddHttpClient("Gateway", client =>
 {
     client.BaseAddress = new Uri("http://gateway-service:8080");
@@ -27,6 +27,8 @@ builder.Services.AddHttpClient("Gateway", client =>
 
 var connectionString = Environment.GetEnvironmentVariable("DOCKER_CONNECT_STRING") 
                        ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine(connectionString);
 
 builder.Services.AddDbContext<FlightContext>(options =>
 {

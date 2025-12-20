@@ -146,7 +146,8 @@ namespace BonusService.Controllers
                                 User.FindFirst(ClaimTypes.NameIdentifier) ?? 
                                 User.FindFirst(JwtRegisteredClaimNames.Sub) ??
                                 User.FindFirst("email") ??
-                                User.FindFirst("upn");
+                                User.FindFirst("upn") ??
+                                User.FindFirst("sub");
     
             if (usernameClaim == null)
                 throw new UnauthorizedAccessException("User not found in token claims");
