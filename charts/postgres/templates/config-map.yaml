@@ -5,7 +5,8 @@ metadata:
   namespace: test
 data:
   01-init.sql: |
-    CREATE TABLE IF NOT EXISTS flights
-    CREATE TABLE IF NOT EXISTS tickets
-    CREATE TABLE IF NOT EXISTS bonuses
-    CREATE DATABASE "keycloak-postgres";
+    CREATE DATABASE flights;
+    CREATE DATABASE bonuses; 
+    CREATE DATABASE tickets;
+    CREATE ROLE program WITH PASSWORD 'program';
+    ALTER ROLE program WITH LOGIN;
