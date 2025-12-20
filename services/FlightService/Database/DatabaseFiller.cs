@@ -20,8 +20,6 @@ public class DatabaseFiller
     {
         try
         {
-            await AddAirport();
-            await AddFlight();
             if ((await _airportRepository.GetAll()).Count == 0)
                 await AddAirport();
             

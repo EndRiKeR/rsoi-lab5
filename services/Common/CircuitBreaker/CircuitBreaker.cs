@@ -69,11 +69,12 @@ public class CircuitBreaker : ICircuitBreaker
             
             return result;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             FailureTimes.Add(DateTime.UtcNow);
             
             _logger.LogBadCircuitBreakerInfo($"Ошибка номер {CountFailuresByMinutes()}");
+            _logger.LogBadCircuitBreakerInfo($"{ex}");
             
             LastFailureTime = DateTime.UtcNow;
 
