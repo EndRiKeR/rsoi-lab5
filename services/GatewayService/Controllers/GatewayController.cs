@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Net.Http.Headers;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using Common.CircuitBreaker;
@@ -44,23 +45,29 @@ namespace GatewayService.Controllers
         }
         
         [HttpGet("flights")]
+        [Authorize]
         public async Task<IActionResult> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)
         {
             try
             {
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/flights");
+                if (!string.IsNullOrEmpty(authHeader))
+                    request.Headers.Add("Authorization", authHeader);
                 PaginationResponse? response = await _circuitBreakersController.ExecuteAsync(
                     Services.Flight,
                     async () => await SendRequest<PaginationResponse>(_flightsClient, request)
                 );
-                
+
                 return Ok(response);
+            }
+            catch (ServerDiedException ex)
+            {
+                return StatusCode(503, new ErrorResponse { Message = ex.Message });
             }
             catch (Exception ex)
             {
-                if (ex is ServerDiedException)
-                    return StatusCode(503, new ErrorResponse { Message = ex.Message });
-
                 return StatusCode(500, new ErrorResponse { Message = ex.Message });
             }
         }

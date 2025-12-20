@@ -13,7 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://dev-xtn38r72lorhw2oz.us.auth0.com/api/v2/";
+        options.Authority = "https://dev-xtn38r72lorhw2oz.us.auth0.com/";
         options.Audience = "https://endriker-rsoi-api";
         options.RequireHttpsMetadata = true;
     });

@@ -22,6 +22,7 @@ namespace FlightService.Controllers
         }
         
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)
         {
             try

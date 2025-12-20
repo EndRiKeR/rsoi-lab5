@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: services/FlightService/Dockerfile
-    container_name: flight-service-3
+    container_name: flight-service
     environment:
       - DOCKER_CONNECT_STRING=Host=postgres;Port=5432;Database=flights;Username=postgres;Password=postgres
       - ASPNETCORE_HTTP_PORTS=8060
@@ -42,7 +42,7 @@ services:
     build:
       context: .
       dockerfile: services/TicketsService/Dockerfile
-    container_name: tickets-service-3
+    container_name: tickets-service
     environment:
       - DOCKER_CONNECT_STRING=Host=postgres;Port=5432;Database=tickets;Username=postgres;Password=postgres
       - ASPNETCORE_HTTP_PORTS=8070
@@ -58,7 +58,7 @@ services:
     build:
       context: .
       dockerfile: services/BonusService/Dockerfile
-    container_name: bonus-service-3
+    container_name: bonus-service
     environment:
       - DOCKER_CONNECT_STRING=Host=postgres;Port=5432;Database=privileges;Username=postgres;Password=postgres
       - ASPNETCORE_HTTP_PORTS=8050
@@ -74,7 +74,7 @@ services:
     build:
       context: .
       dockerfile: services/GatewayService/Dockerfile
-    container_name: gateway-service-3
+    container_name: gateway-service
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
     ports:
