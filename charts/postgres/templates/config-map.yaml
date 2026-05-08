@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: test
+data:
+  01-init.sql: |
+    CREATE DATABASE flights;
+    CREATE DATABASE bonuses; 
+    CREATE DATABASE tickets;
+    CREATE ROLE program WITH PASSWORD 'program';
+    ALTER ROLE program WITH LOGIN;

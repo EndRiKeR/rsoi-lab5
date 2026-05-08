@@ -1,0 +1,30 @@
+fullnameOverride: bonus-service
+
+image:
+  repository: ""
+  tag: "latest"
+
+service:
+  port: 8050
+
+env:
+  - name: DOCKER_CONNECT_STRING
+    value: "Host=postgres;Port=5432;Database=bonuses;Username=postgres;Password=postgres"
+
+livenessProbe:
+  httpGet:
+    path: /manage/health
+    port: 8050
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /manage/health
+    port: 8050
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
