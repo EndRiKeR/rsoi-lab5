@@ -9,11 +9,11 @@ namespace GatewayService.Controllers;
 [Route("api/v1")]
 public class AuthController : ControllerBase
 {
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _identityClient;
 
     public AuthController(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClientFactory.CreateClient();
+        _identityClient = httpClientFactory.CreateClient("IdentityService");
     }
 
     [AllowAnonymous]
@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
             Content = content
         };
 
-        var response = await _httpClient.SendAsync(httpRequest);
+        var response = await _identityClient.SendAsync(httpRequest);
         var json = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -62,7 +62,7 @@ public class AuthController : ControllerBase
             ["client_secret"] = "ваш_секрет_клиента"
         };
         var content = new FormUrlEncodedContent(body);
-        var response = await _httpClient.PostAsync(tokenEndpoint, content);
+        var response = await _identityClient.PostAsync(tokenEndpoint, content);
         var json = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)

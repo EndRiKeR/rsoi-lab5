@@ -1,12 +1,11 @@
 fullnameOverride: identity-service
 
 image:
-  repository: identity-service
-  tag: latest
-  pullPolicy: IfNotPresent
+  repository: ""
+  tag: "latest"
 
 service:
-  port: 8443
+  port: 8090
 
 env:
   - name: DOCKER_CONNECT_STRING
@@ -15,7 +14,7 @@ env:
 livenessProbe:
   httpGet:
     path: /manage/health
-    port: 8443
+    port: 8090
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
@@ -25,19 +24,8 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /manage/health
-    port: 8443
+    port: 8090
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3
-
-
-volumes:
-  - name: identity-tls
-    secret:
-      secretName: identity-tls-secret
-
-volumeMounts:
-  - name: identity-tls
-    mountPath: /etc/identity-tls
-    readOnly: true

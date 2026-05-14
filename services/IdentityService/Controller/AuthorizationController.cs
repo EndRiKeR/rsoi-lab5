@@ -80,16 +80,18 @@ public class AuthorizationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Exchange()
     {
+        Console.WriteLine("Start token");
         var request = HttpContext.GetOpenIddictServerRequest();
         if (request.IsAuthorizationCodeGrantType())
         {
+            Console.WriteLine("Good token");
             // Проверить авторизационный код и вернуть токен
             // Валидация уже выполнена OpenIddict
             var principal = (await HttpContext.AuthenticateAsync(
                 OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
             return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
-
+        Console.WriteLine("Bad token");
         return BadRequest();
     }
 

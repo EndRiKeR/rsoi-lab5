@@ -1,22 +1,11 @@
-using System.Net;
 using IdentityService.Database;
 using IdentityService.Database.Models;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
 
-Console.WriteLine("Start build");
 var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.Listen(IPAddress.Any, 8443, listenOptions =>
-    {
-        listenOptions.UseHttps("/etc/identity-tls/tls.crt", "/etc/identity-tls/tls.key");
-    });
-});
 
 var connectionString = Environment.GetEnvironmentVariable("DOCKER_CONNECT_STRING")
                        ?? builder.Configuration.GetConnectionString("DefaultConnection");
@@ -40,11 +29,10 @@ builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
         options.SetAuthorizationEndpointUris("/connect/authorize")
-            .SetTokenEndpointUris("/connect/token")
-            .SetUserInfoEndpointUris("/connect/userinfo");
+               .SetTokenEndpointUris("/connect/token")
+               .SetUserInfoEndpointUris("/connect/userinfo");
 
-        options.AllowAuthorizationCodeFlow()
-            .AllowPasswordFlow();
+        options.AllowPasswordFlow();
 
         options.RegisterScopes(OpenIddictConstants.Scopes.OpenId,
                                OpenIddictConstants.Scopes.Profile,
@@ -69,11 +57,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-Console.WriteLine("Start app");
+builder.Services.AddHttpClient("Gateway", client =>
+{
+    client.BaseAddress = new Uri("http://gateway-service:8080");
+});
 
 var app = builder.Build();
-
-Console.WriteLine("Start db init");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -132,13 +121,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-Console.WriteLine("Stop db init");
-
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-Console.WriteLine("All done");
-
-app.Run("https://0.0.0.0:8443");
+app.Run("http://0.0.0.0:8090");

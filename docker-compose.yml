@@ -76,9 +76,10 @@ services:
     container_name: identity-service
     environment:
       - DOCKER_CONNECT_STRING=Host=postgres;Port=5432;Database=identity;Username=postgres;Password=postgres
-      - ASPNETCORE_HTTP_PORTS=8443
+      - ASPNETCORE_HTTP_PORTS=8090
+      - ASPNETCORE_ENVIRONMENT=Development
     ports:
-      - "8443:8443"
+      - "8090:8090"
     depends_on:
       postgres:
         condition: service_healthy
