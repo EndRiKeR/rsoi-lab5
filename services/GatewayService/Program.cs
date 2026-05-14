@@ -2,6 +2,7 @@ using Common.CircuitBreaker;
 using Common.Fallbacks;
 using Common.RetryQueue;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 // check
 
@@ -12,10 +13,27 @@ builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://dev-xtn38r72lorhw2oz.us.auth0.com/";
-        options.Audience = "https://endriker-rsoi-api";
-        options.RequireHttpsMetadata = true;
+        options.Authority = "http://identity-service:8443";
+        options.Audience = "endriker-rsoi-api";
+        options.RequireHttpsMetadata = false;
     });
+
+builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Auth failed: {context.Exception}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"Token valid. Claims: {string.Join(", ", context.Principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            return Task.CompletedTask;
+        }
+    };
+});
 
 builder.Services.AddAuthorization();
 
@@ -38,6 +56,11 @@ builder.Services.AddHttpClient("TicketsService", client =>
 builder.Services.AddHttpClient("BonusService", client =>
 {
     client.BaseAddress = new Uri("http://bonus-service:8050");
+});
+
+builder.Services.AddHttpClient("IdentityService", client =>
+{
+    client.BaseAddress = new Uri("http://bonus-service:8090");
 });
 
 var app = builder.Build();

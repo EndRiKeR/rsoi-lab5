@@ -9,27 +9,17 @@
 		},
 		{
 			"key": "identityProviderUrl",
-			"value": "https://dev-xtn38r72lorhw2oz.us.auth0.com",
+			"value": "http://localhost:8080",
 			"enabled": true
 		},
 		{
 			"key": "username",
-			"value": "test@mail.com",
+			"value": "rsoi_user",
 			"enabled": true
 		},
 		{
 			"key": "password",
-			"value": "9Ez-hrp-m5Y-atq",
-			"enabled": true
-		},
-		{
-			"key": "clientId",
-			"value": "5mdcjQPVkVYlch6aK7NhnGxyfQhDXVx5",
-			"enabled": true
-		},
-		{
-			"key": "clientSecret",
-			"value": "jm4tedMUc5nY4UhCR_X2nVkwHH8GY34EPyhI-RRUqYndgDbzTm0j7gJ13wN7szmX",
+			"value": "6Pm-GuZ-LeN-Zqy",
 			"enabled": true
 		}
 	],

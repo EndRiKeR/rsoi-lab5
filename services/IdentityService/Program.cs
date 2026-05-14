@@ -1,0 +1,144 @@
+using System.Net;
+using IdentityService.Database;
+using IdentityService.Database.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using OpenIddict.Abstractions;
+
+Console.WriteLine("Start build");
+var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 8443, listenOptions =>
+    {
+        listenOptions.UseHttps("/etc/identity-tls/tls.crt", "/etc/identity-tls/tls.key");
+    });
+});
+
+var connectionString = Environment.GetEnvironmentVariable("DOCKER_CONNECT_STRING")
+                       ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+    options.UseOpenIddict();
+});
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.UseEntityFrameworkCore()
+               .UseDbContext<ApplicationDbContext>();
+    })
+    .AddServer(options =>
+    {
+        options.SetAuthorizationEndpointUris("/connect/authorize")
+            .SetTokenEndpointUris("/connect/token")
+            .SetUserInfoEndpointUris("/connect/userinfo");
+
+        options.AllowAuthorizationCodeFlow()
+            .AllowPasswordFlow();
+
+        options.RegisterScopes(OpenIddictConstants.Scopes.OpenId,
+                               OpenIddictConstants.Scopes.Profile,
+                               OpenIddictConstants.Scopes.Email);
+
+        options.AddDevelopmentEncryptionCertificate()
+               .AddDevelopmentSigningCertificate();
+
+        options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableTokenEndpointPassthrough()
+            .EnableUserInfoEndpointPassthrough()
+            .DisableTransportSecurityRequirement();
+    })
+    .AddValidation(options =>
+    {
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+Console.WriteLine("Start app");
+
+var app = builder.Build();
+
+Console.WriteLine("Start db init");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+    var pendingMigrations = await db.Database.GetPendingMigrationsAsync();
+    if (pendingMigrations.Any())
+    {
+        Console.WriteLine($"Applying {pendingMigrations.Count()} pending migrations...");
+        await db.Database.MigrateAsync();
+    }
+    else
+    {
+        Console.WriteLine("No pending migrations.");
+    }
+
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    if (!await roleManager.RoleExistsAsync("Admin"))
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+    if (!await roleManager.RoleExistsAsync("User"))
+        await roleManager.CreateAsync(new IdentityRole("User"));
+
+    var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+    if (await manager.FindByClientIdAsync("endriker-rsoi-api") == null)
+    {
+        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        {
+            ClientId = "endriker-rsoi-api",
+            ClientSecret = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk",
+            DisplayName = "RSOI API",
+            Permissions =
+            {
+                OpenIddictConstants.Permissions.Endpoints.Authorization,
+                OpenIddictConstants.Permissions.Endpoints.Token,
+                OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+                OpenIddictConstants.Permissions.ResponseTypes.Code,
+                OpenIddictConstants.Permissions.GrantTypes.Password,
+                OpenIddictConstants.Permissions.Scopes.Profile,
+                OpenIddictConstants.Permissions.Scopes.Email,
+                OpenIddictConstants.Permissions.Prefixes.Scope + "api1"
+            },
+            RedirectUris = { new Uri("http://localhost:8080/api/v1/callback") },
+            PostLogoutRedirectUris = { new Uri("http://localhost:8080") }
+        });
+    }
+    
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    if (await userManager.FindByNameAsync("rsoi_user") == null)
+    {
+        var user = new ApplicationUser { UserName = "rsoi_user", Email = "rsoi_user@example.com" };
+        var result = await userManager.CreateAsync(user, "6Pm-GuZ-LeN-Zqy");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(user, "User");
+        }
+    }
+}
+
+Console.WriteLine("Stop db init");
+
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+Console.WriteLine("All done");
+
+app.Run("https://0.0.0.0:8443");

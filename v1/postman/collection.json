@@ -34,25 +34,20 @@
 							"type": "noauth"
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"grant_type\": \"password\",\r\n    \"client_id\": \"{{clientId}}\",\r\n    \"client_secret\": \"{{clientSecret}}\",\r\n    \"username\": \"{{username}}\",\r\n    \"password\": \"{{password}}\",\r\n    \"audience\": \"https://endriker-rsoi-api\",\r\n    \"scope\": \"openid profile email\",\r\n    \"connection\": \"Username-Password-Authentication\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}"
 						},
 						"url": {
-							"raw": "{{identityProviderUrl}}/oauth/token",
-							"host": [
-								"{{identityProviderUrl}}"
-							],
-							"path": [
-								"oauth",
-								"token"
-							]
+							"raw": "{{serviceUrl}}/api/v1/authorize",
+							"host": ["{{serviceUrl}}"],
+							"path": ["api", "v1", "authorize"]
 						}
 					},
 					"response": []

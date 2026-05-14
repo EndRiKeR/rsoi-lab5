@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{6C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniTests", "services\UniTests\UniTests.csproj", "{51F180CF-CFC2-4924-88BF-AE1885240519}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityService", "services\IdentityService\IdentityService.csproj", "{0EBBC2CB-0A19-4767-A5FD-922821B130EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{51F180CF-CFC2-4924-88BF-AE1885240519}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51F180CF-CFC2-4924-88BF-AE1885240519}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51F180CF-CFC2-4924-88BF-AE1885240519}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EBBC2CB-0A19-4767-A5FD-922821B130EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EBBC2CB-0A19-4767-A5FD-922821B130EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EBBC2CB-0A19-4767-A5FD-922821B130EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EBBC2CB-0A19-4767-A5FD-922821B130EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{51F180CF-CFC2-4924-88BF-AE1885240519} = {6C5B71AF-D6F3-4974-A55E-CB29A42EEFBB}

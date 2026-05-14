@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using TicketsService.Database;
 using TicketsService.Database.Repositories;
 using TicketsService.Database.Repositories.Interfaces;
@@ -13,10 +14,27 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://dev-xtn38r72lorhw2oz.us.auth0.com/";
-        options.Audience = "https://endriker-rsoi-api";
-        options.RequireHttpsMetadata = true;
+        options.Authority = "http://identity-service:8443";
+        options.Audience = "endriker-rsoi-api";
+        options.RequireHttpsMetadata = false;
     });
+
+builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Auth failed: {context.Exception}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"Token valid. Claims: {string.Join(", ", context.Principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            return Task.CompletedTask;
+        }
+    };
+});
 
 builder.Services.AddAuthorization();
 
@@ -40,17 +58,8 @@ var app = builder.Build();
 var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 var context = services.GetRequiredService<TicketsContext>();
-var pendingMigrations = context.Database.GetPendingMigrations().ToList();
-// if (pendingMigrations.Any())
-// {
-//     Console.WriteLine($"Applying {pendingMigrations.Count} migrations...");
+context.Database.GetPendingMigrations();
 context.Database.Migrate();
-//     Console.WriteLine("Migrations applied successfully");
-// }
-// else
-// {
-//     Console.WriteLine("Database is up-to-date");
-// }
 
 if (app.Environment.IsDevelopment())
 {

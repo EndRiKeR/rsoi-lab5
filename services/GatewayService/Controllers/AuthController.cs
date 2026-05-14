@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Common.DtoModels.AuthDto;
 using Microsoft.AspNetCore.Authorization;
@@ -19,28 +18,20 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("authorize")]
-    public async Task<IActionResult> Authorize([FromBody] AuthRequest request)
+    public async Task<IActionResult> AuthorizePassword([FromBody] AuthRequest request)
     {
-        const string domain = "dev-xtn38r72lorhw2oz.us.auth0.com";
-        const string clientId = "5mdcjQPVkVYlch6aK7NhnGxyfQhDXVx5";
-        const string clientSecret = "jm4tedMUc5nY4UhCR_X2nVkwHH8GY34EPyhI-RRUqYndgDbzTm0j7gJ13wN7szmX";
-        const string audience = "https://endriker-rsoi-api";
-
-        var tokenEndpoint = $"https://{domain}/oauth/token";
-
+        var tokenEndpoint = "http://identity-service:8090/connect/token";
         var body = new Dictionary<string, string>
         {
             ["grant_type"] = "password",
             ["username"] = request.Username,
             ["password"] = request.Password,
-            ["client_id"] = clientId,
-            ["client_secret"] = clientSecret,
-            ["audience"] = audience,
+            ["client_id"] = "endriker-rsoi-api",
+            ["client_secret"] = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk", // заменить на конфигурацию
             ["scope"] = "openid profile email"
         };
 
         using var content = new FormUrlEncodedContent(body);
-
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint)
         {
             Content = content
@@ -52,9 +43,32 @@ public class AuthController : ControllerBase
         if (!response.IsSuccessStatusCode)
             return StatusCode((int)response.StatusCode, json);
 
-        var token = JsonSerializer.Deserialize<AuthResponse>(json,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var token = JsonSerializer.Deserialize<AuthResponse>(json);
+        return Ok(token);
+    }
 
+    [AllowAnonymous]
+    [HttpGet("callback")]
+    public async Task<IActionResult> Callback([FromQuery] string code)
+    {
+        // Обменять code на токен, запросив POST /connect/token
+        var tokenEndpoint = "http://identity-service:8090/connect/token";
+        var body = new Dictionary<string, string>
+        {
+            ["grant_type"] = "authorization_code",
+            ["code"] = code,
+            ["redirect_uri"] = "http://gateway-service:8080/api/v1/callback",
+            ["client_id"] = "endriker-rsoi-api",
+            ["client_secret"] = "ваш_секрет_клиента"
+        };
+        var content = new FormUrlEncodedContent(body);
+        var response = await _httpClient.PostAsync(tokenEndpoint, content);
+        var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            return BadRequest(json);
+
+        var token = JsonSerializer.Deserialize<AuthResponse>(json);
         return Ok(token);
     }
 }

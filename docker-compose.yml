@@ -68,6 +68,22 @@ services:
         condition: service_healthy
     networks:
       - flight-booking-network
+        
+  identity-service:
+    build:
+      context: .
+      dockerfile: services/IdentityService/Dockerfile
+    container_name: identity-service
+    environment:
+      - DOCKER_CONNECT_STRING=Host=postgres;Port=5432;Database=identity;Username=postgres;Password=postgres
+      - ASPNETCORE_HTTP_PORTS=8443
+    ports:
+      - "8443:8443"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - flight-booking-network
 
   gateway-service:
     build:
