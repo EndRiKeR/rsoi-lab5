@@ -16,13 +16,17 @@ public class AuthorizationController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    
+    private readonly ILogger<AuthorizationController> _logger;
 
     public AuthorizationController(
         SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ILogger<AuthorizationController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _logger = logger;
     }
 
     [HttpGet("authorize")]
@@ -80,18 +84,18 @@ public class AuthorizationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Exchange()
     {
-        Console.WriteLine("Start token");
+        _logger.LogWarning("Start token");
         var request = HttpContext.GetOpenIddictServerRequest();
-        if (request.IsAuthorizationCodeGrantType())
+        if (request.IsAuthorizationCodeGrantType() || request.IsPasswordGrantType())
         {
-            Console.WriteLine("Good token");
+            _logger.LogWarning("Good token");
             // Проверить авторизационный код и вернуть токен
             // Валидация уже выполнена OpenIddict
             var principal = (await HttpContext.AuthenticateAsync(
                 OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
             return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
-        Console.WriteLine("Bad token");
+        _logger.LogWarning("Bad token");
         return BadRequest();
     }
 

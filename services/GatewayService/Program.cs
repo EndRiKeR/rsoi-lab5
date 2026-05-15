@@ -26,6 +26,9 @@ builder.Services.AddSingleton<ControllersFallbacks>();
 builder.Services.AddSingleton<RetryQueueService>();
 builder.Services.AddHostedService<RetryBackgroundService>();
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
 builder.Services.AddHttpClient("FlightService", client =>
 {
     client.BaseAddress = new Uri("http://flight-service:8060");

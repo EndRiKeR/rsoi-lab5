@@ -32,7 +32,8 @@ builder.Services.AddOpenIddict()
                .SetTokenEndpointUris("/connect/token")
                .SetUserInfoEndpointUris("/connect/userinfo");
 
-        options.AllowPasswordFlow();
+        options.AllowAuthorizationCodeFlow()
+            .AllowPasswordFlow();
 
         options.RegisterScopes(OpenIddictConstants.Scopes.OpenId,
                                OpenIddictConstants.Scopes.Profile,
@@ -56,6 +57,9 @@ builder.Services.AddOpenIddict()
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 builder.Services.AddHttpClient("Gateway", client =>
 {
@@ -86,28 +90,34 @@ using (var scope = app.Services.CreateScope())
         await roleManager.CreateAsync(new IdentityRole("User"));
 
     var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-    if (await manager.FindByClientIdAsync("endriker-rsoi-api") == null)
+    var clientId = "endriker-rsoi-api";
+    var existingClient = await manager.FindByClientIdAsync(clientId);
+
+    var descriptor = new OpenIddictApplicationDescriptor
     {
-        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        ClientId = clientId,
+        ClientSecret = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk",
+        ClientType = OpenIddictConstants.ClientTypes.Confidential,
+        DisplayName = "RSOI API",
+        Permissions =
         {
-            ClientId = "endriker-rsoi-api",
-            ClientSecret = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk",
-            DisplayName = "RSOI API",
-            Permissions =
-            {
-                OpenIddictConstants.Permissions.Endpoints.Authorization,
-                OpenIddictConstants.Permissions.Endpoints.Token,
-                OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
-                OpenIddictConstants.Permissions.ResponseTypes.Code,
-                OpenIddictConstants.Permissions.GrantTypes.Password,
-                OpenIddictConstants.Permissions.Scopes.Profile,
-                OpenIddictConstants.Permissions.Scopes.Email,
-                OpenIddictConstants.Permissions.Prefixes.Scope + "api1"
-            },
-            RedirectUris = { new Uri("http://localhost:8080/api/v1/callback") },
-            PostLogoutRedirectUris = { new Uri("http://localhost:8080") }
-        });
-    }
+            OpenIddictConstants.Permissions.Endpoints.Authorization,
+            OpenIddictConstants.Permissions.Endpoints.Token,
+            OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+            OpenIddictConstants.Permissions.ResponseTypes.Code,
+            OpenIddictConstants.Permissions.GrantTypes.Password,
+            OpenIddictConstants.Permissions.Scopes.Profile,
+            OpenIddictConstants.Permissions.Scopes.Email,
+            OpenIddictConstants.Permissions.Prefixes.Scope + "api1"
+        },
+        RedirectUris = { new Uri("http://localhost:8080/api/v1/callback") },
+        PostLogoutRedirectUris = { new Uri("http://localhost:8080") }
+    };
+
+    if (existingClient is null)
+        await manager.CreateAsync(descriptor);
+    else
+        await manager.UpdateAsync(existingClient, descriptor);
     
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     if (await userManager.FindByNameAsync("rsoi_user") == null)

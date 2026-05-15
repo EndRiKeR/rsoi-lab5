@@ -10,16 +10,22 @@ namespace GatewayService.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly HttpClient _identityClient;
+    
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IHttpClientFactory httpClientFactory)
+    public AuthController(IHttpClientFactory httpClientFactory, ILogger<AuthController> logger)
     {
         _identityClient = httpClientFactory.CreateClient("IdentityService");
+
+        _logger = logger;
     }
 
     [AllowAnonymous]
     [HttpPost("authorize")]
     public async Task<IActionResult> AuthorizePassword([FromBody] AuthRequest request)
     {
+        _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Authorizing password ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        
         var tokenEndpoint = "http://identity-service:8090/connect/token";
         var body = new Dictionary<string, string>
         {
@@ -51,7 +57,6 @@ public class AuthController : ControllerBase
     [HttpGet("callback")]
     public async Task<IActionResult> Callback([FromQuery] string code)
     {
-        // Обменять code на токен, запросив POST /connect/token
         var tokenEndpoint = "http://identity-service:8090/connect/token";
         var body = new Dictionary<string, string>
         {
@@ -59,7 +64,7 @@ public class AuthController : ControllerBase
             ["code"] = code,
             ["redirect_uri"] = "http://gateway-service:8080/api/v1/callback",
             ["client_id"] = "endriker-rsoi-api",
-            ["client_secret"] = "ваш_секрет_клиента"
+            ["client_secret"] = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk"
         };
         var content = new FormUrlEncodedContent(body);
         var response = await _identityClient.PostAsync(tokenEndpoint, content);
