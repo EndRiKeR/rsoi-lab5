@@ -50,6 +50,9 @@ public class AuthorizationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> AuthorizePost([FromForm] string username, [FromForm] string password)
     {
+        _logger.LogInformation("~~~~~ Начал POST ~~~~~");
+        _logger.LogInformation($"~~~~~ username: {username}, password: {password} ~~~~~");
+        _logger.LogInformation($"~~~~~ check HttpContext: {HttpContext == null}, body: {HttpContext.Response} ~~~~~");
         var request = HttpContext.GetOpenIddictServerRequest();
         if (request == null)
             return BadRequest("Invalid request");

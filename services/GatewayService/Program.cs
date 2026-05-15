@@ -4,8 +4,6 @@ using Common.RetryQueue;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
-// check
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();

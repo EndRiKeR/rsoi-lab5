@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 TAG=$(date +"%Y%m%d-%H%M%S")
 
@@ -51,3 +50,5 @@ kubectl wait -n test -l app.kubernetes.io/instance=bonus-service pod --for=condi
 kubectl wait -n test -l app.kubernetes.io/instance=flight-service pod --for=condition=Ready --timeout=180s
 kubectl wait -n test -l app.kubernetes.io/instance=tickets-service pod --for=condition=Ready --timeout=180s
 kubectl wait -n test -l app.kubernetes.io/instance=gateway-service pod --for=condition=Ready --timeout=180s
+
+kubectl get pods -n test -w
