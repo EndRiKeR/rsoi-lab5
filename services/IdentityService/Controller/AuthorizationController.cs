@@ -37,8 +37,12 @@ public class AuthorizationController : ControllerBase
         if (request == null)
             return BadRequest("Invalid request");
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "login.html");
-        var html = System.IO.File.ReadAllText(filePath);
+        var template = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "login.html"));
+        
+        var html = template
+            .Replace("{{form_action}}", $"/connect/authorize?{Request.QueryString}");
+
+        _logger.LogInformation("~~~~~ Добавил в страничку query параметры ~~~~~");
         return Content(html, "text/html");
     }
 
