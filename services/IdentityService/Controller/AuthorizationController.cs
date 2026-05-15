@@ -31,52 +31,53 @@ public class AuthorizationController : ControllerBase
 
     [HttpGet("authorize")]
     [AllowAnonymous]
-    public async Task<IActionResult> Authorize()
+    public IActionResult Authorize()
     {
-        // Для простоты вернём HTML-форму (можно заменить на SPA)
-        return Content(@"
-            <form method='post'>
-                <input name='username' placeholder='username' />
-                <input name='password' type='password' placeholder='password' />
-                <button type='submit'>Login</button>
-            </form>", "text/html");
+        var request = HttpContext.GetOpenIddictServerRequest();
+        if (request == null)
+            return BadRequest("Invalid request");
+
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "login.html");
+        var html = System.IO.File.ReadAllText(filePath);
+        return Content(html, "text/html");
     }
 
     [HttpPost("authorize")]
     [AllowAnonymous]
     public async Task<IActionResult> AuthorizePost([FromForm] string username, [FromForm] string password)
     {
+        var request = HttpContext.GetOpenIddictServerRequest();
+        if (request == null)
+            return BadRequest("Invalid request");
+
         var user = await _userManager.FindByNameAsync(username);
         if (user == null)
-            return Unauthorized();
+            return Redirect($"/connect/authorize?error=invalid_credentials");
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
         if (!result.Succeeded)
-            return Unauthorized();
+            return Redirect($"/connect/authorize?error=invalid_credentials");
 
-        // Формируем principal для OpenIddict
         var claims = new List<Claim>
         {
             new Claim(OpenIddictConstants.Claims.Subject, user.Id.ToString()),
-            new Claim(OpenIddictConstants.Claims.Name, user.UserName),
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(OpenIddictConstants.Claims.PreferredUsername, user.UserName),
+            new Claim(OpenIddictConstants.Claims.Name, user.UserName!),
+            new Claim(ClaimTypes.Name, user.UserName!),
+            new Claim(OpenIddictConstants.Claims.PreferredUsername, user.UserName!),
             new Claim(OpenIddictConstants.Claims.Email, user.Email ?? "noemail")
         };
 
-        // Добавляем роли
         var roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 
-        var identity = new ClaimsIdentity(claims,
-            OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(OpenIddictConstants.Scopes.OpenId,
             OpenIddictConstants.Scopes.Profile,
             OpenIddictConstants.Scopes.Email);
 
-        // Установить куку и вернуть signin-результат
+        // Возвращаем SignIn – OpenIddict автоматически выполнит редирект с кодом
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
@@ -84,20 +85,23 @@ public class AuthorizationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Exchange()
     {
-        _logger.LogWarning("Start token");
         var request = HttpContext.GetOpenIddictServerRequest();
-        if (request.IsAuthorizationCodeGrantType() || request.IsPasswordGrantType())
+        if (request == null)
+            return BadRequest("Invalid request");
+
+        if (request.IsAuthorizationCodeGrantType())
         {
-            _logger.LogWarning("Good token");
-            // Проверить авторизационный код и вернуть токен
-            // Валидация уже выполнена OpenIddict
-            var principal = (await HttpContext.AuthenticateAsync(
-                OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            var authenticateResult = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            var principal = authenticateResult.Principal;
+            if (principal == null)
+                return Unauthorized();
             return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
-        _logger.LogWarning("Bad token");
-        return BadRequest();
+
+        // Для Password Grant – обрабатывается отдельно, если нужно
+        return BadRequest("Grant type not supported here");
     }
+    
 
     [HttpGet("userinfo")]
     [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]

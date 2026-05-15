@@ -27,15 +27,12 @@ resources:
     memory: 128Mi
     
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   annotations: {}
   hosts:
-    - host: keycloak.example.net
+    - host: ""
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - hosts:
-        - keycloak.example.net
-      secretName: benco-io-cert
+  tls: []

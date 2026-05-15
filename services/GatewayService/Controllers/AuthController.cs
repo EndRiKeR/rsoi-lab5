@@ -21,36 +21,18 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("authorize")]
-    public async Task<IActionResult> AuthorizePassword([FromBody] AuthRequest request)
+    [HttpGet("authorize")]
+    public async Task<IActionResult> Authorize()
     {
-        _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Authorizing password ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        
-        var tokenEndpoint = "http://identity-service:8090/connect/token";
-        var body = new Dictionary<string, string>
-        {
-            ["grant_type"] = "password",
-            ["username"] = request.Username,
-            ["password"] = request.Password,
-            ["client_id"] = "endriker-rsoi-api",
-            ["client_secret"] = "2YYBdhLDhhfVuen9GNq520JO3tmuqhTk", // заменить на конфигурацию
-            ["scope"] = "openid profile email"
-        };
+        _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Authorizing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-        using var content = new FormUrlEncodedContent(body);
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint)
-        {
-            Content = content
-        };
+        var redirectUri = $"http://localhost:8090/connect/authorize" +
+                          $"?client_id=endriker-rsoi-api" +
+                          $"&redirect_uri=http://localhost:8080/api/v1/callback" +
+                          $"&response_type=code" +
+                          $"&scope=openid profile email";
 
-        var response = await _identityClient.SendAsync(httpRequest);
-        var json = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-            return StatusCode((int)response.StatusCode, json);
-
-        var token = JsonSerializer.Deserialize<AuthResponse>(json);
-        return Ok(token);
+        return Redirect(redirectUri);
     }
 
     [AllowAnonymous]
@@ -73,7 +55,11 @@ public class AuthController : ControllerBase
         if (!response.IsSuccessStatusCode)
             return BadRequest(json);
 
-        var token = JsonSerializer.Deserialize<AuthResponse>(json);
-        return Ok(token);
+        var token = JsonSerializer.Deserialize<AuthResponse>(json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        // TODO: переделать мб?
+        var redirectUrl = $"http://localhost:5173/callback?token={token.AccessToken}";
+        return Redirect(redirectUrl);
     }
 }
