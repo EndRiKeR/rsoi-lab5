@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
-using Common.RetryQueue;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+namespace Common.RetryQueue;
 
 public class RetryBackgroundService : BackgroundService
 {
@@ -55,7 +56,16 @@ public class RetryBackgroundService : BackgroundService
             {
                 Content = JsonContent.Create(request.Body)
             };
-            msg.Headers.Add("X-User-Name", request.Username);
+            
+            if (!string.IsNullOrEmpty(request.AccessToken))
+            {
+                msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", request.AccessToken);
+            }
+            else
+            {
+                _logger.LogError("❌ Access token is missing for retry request");
+                return;
+            }
             
             var bonusResponse = await request.Client.SendAsync(msg);
 

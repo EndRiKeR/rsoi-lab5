@@ -10,9 +10,11 @@ const CallbackPage = () => {
     useEffect(() => {
         const token = searchParams.get('token');
         if (token) {
+            console.log('CallbackPage: token получен', token.substring(0, 20) + '...');
             setToken(token);
             navigate('/', { replace: true });
         } else {
+            console.log('CallbackPage: токен отсутствует, переадресация на логин');
             navigate('/login', { replace: true });
         }
     }, [searchParams, setToken, navigate]);

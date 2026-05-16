@@ -19,6 +19,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = "http://identity-service:8090";
         options.Audience = "endriker-rsoi-api";
         options.RequireHttpsMetadata = false;
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = "http://identity-service:8090/",
+        };
     });
 
 var connectionString = Environment.GetEnvironmentVariable("DOCKER_CONNECT_STRING") 

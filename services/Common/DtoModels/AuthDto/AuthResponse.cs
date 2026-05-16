@@ -1,10 +1,18 @@
+using System.Text.Json.Serialization;
+
 namespace Common.DtoModels.AuthDto;
 
 public class AuthResponse
 {
-    public string AccessToken { get; set; } = default!;
-    public string TokenType { get; set; } = default!;
+    [JsonPropertyName("access_token")]
+    public string AccessToken { get; set; }
+
+    [JsonPropertyName("expires_in")]
     public int ExpiresIn { get; set; }
-    public string? Scope { get; set; }
-    public string? IdToken { get; set; }
+
+    [JsonPropertyName("token_type")]
+    public string TokenType { get; set; }
+
+    [JsonPropertyName("scope")]
+    public string Scope { get; set; }
 }

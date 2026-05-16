@@ -17,7 +17,12 @@
 <div class='login-card'>
     <h1>Вход</h1>
     <div id="error-message" class="error"></div>
-    <form method='post' action='{{form_action}}'>
+    <form action="{{form_action}}" method="post">
+        <input type="hidden" name="client_id" value="{{client_id}}" />
+        <input type="hidden" name="redirect_uri" value="{{redirect_uri}}" />
+        <input type="hidden" name="response_type" value="{{response_type}}" />
+        <input type="hidden" name="scope" value="{{scope}}" />
+
         <input name='username' placeholder='Логин' required />
         <input name='password' type='password' placeholder='Пароль' required />
         <button type='submit'>Войти</button>
@@ -32,3 +37,4 @@
 </script>
 </body>
 </html>
+

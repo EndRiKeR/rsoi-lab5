@@ -13,4 +13,5 @@ public class RetryRequest
     public int Attempts { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastAttemptAt { get; set; }
+    public string? AccessToken { get; set; }
 }

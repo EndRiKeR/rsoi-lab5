@@ -9,5 +9,6 @@ data:
     CREATE DATABASE bonuses; 
     CREATE DATABASE tickets;
     CREATE DATABASE identity;
+    CREATE DATABASE statistics;
     CREATE ROLE program WITH PASSWORD 'program';
     ALTER ROLE program WITH LOGIN;

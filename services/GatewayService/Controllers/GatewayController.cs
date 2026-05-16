@@ -12,6 +12,7 @@ using Common.DtoModels.TicketsServiceDto;
 using Common.Errors;
 using Common.Fallbacks;
 using Common.RetryQueue;
+using Confluent.Kafka;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -25,27 +26,70 @@ namespace GatewayService.Controllers
         private readonly HttpClient _ticketsClient;
         private readonly HttpClient _flightsClient;
         private readonly HttpClient _privilegeClient;
+        private readonly HttpClient _statisticsClient;
         private readonly CircuitBreakersController _circuitBreakersController;
         private readonly ControllersFallbacks _fallbacks;
         private readonly RetryQueueService _queueService;
+        private readonly IProducer<Null, string> _producer;
+        private readonly ILogger<GatewayController> _logger;
         
         public GatewayController(
             IHttpClientFactory httpClientFactory,
             CircuitBreakersController circuitBreakersController,
             ControllersFallbacks fallbacks,
-            RetryQueueService queueService)
+            RetryQueueService queueService,
+            IProducer<Null, string> producer,
+            ILogger<GatewayController> logger)
         {
             _privilegeClient = httpClientFactory.CreateClient("BonusService");
             _flightsClient = httpClientFactory.CreateClient("FlightService");
             _ticketsClient = httpClientFactory.CreateClient("TicketsService");
+            _statisticsClient = httpClientFactory.CreateClient("StatisticService");
             
             _circuitBreakersController = circuitBreakersController;
             _fallbacks = fallbacks;
             _queueService = queueService;
+            _producer = producer;
+            _logger = logger;
+        }
+        
+        [HttpGet("statistics")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetStatistics([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        {
+            try
+            {
+                var relativeUri = new Uri("/api/v1/statistics", UriKind.Relative);
+                if (from.HasValue || to.HasValue)
+                {
+                    var query = new List<string>();
+                    if (from.HasValue) query.Add($"from={from.Value:O}");
+                    if (to.HasValue) query.Add($"to={to.Value:O}");
+                    relativeUri = new Uri($"/api/v1/statistics?{string.Join("&", query)}", UriKind.Relative);
+                }
+
+                var request = new HttpRequestMessage(HttpMethod.Get, relativeUri);
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader))
+                    request.Headers.Add("Authorization", authHeader);
+
+                var response = await _statisticsClient.SendAsync(request);
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, content);
+
+                var json = JsonSerializer.Deserialize<List<object>>(content);
+                return Ok(json ?? new List<object>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching statistics");
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
         
         [HttpGet("flights")]
-        [Authorize]
         public async Task<IActionResult> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)
         {
             try
@@ -171,6 +215,7 @@ namespace GatewayService.Controllers
         {
             bool isTicketAdded = false;
             Guid ticketUid = Guid.NewGuid();
+            TicketPurchaseResponse response = null;
             
             try
             {
@@ -216,7 +261,7 @@ namespace GatewayService.Controllers
                 var (paidByBonuses, paidByMoney) = await CalculatePayment(requestDto.Price, requestDto.PaidFromBalance, username);
                 var privilegeInfo = await UpdateBonusBalance(username, ticketUid, paidByBonuses, requestDto.Price);
                 
-                var response = new TicketPurchaseResponse
+                response = new TicketPurchaseResponse
                 {
                     TicketUid = ticketUid,
                     FlightNumber = requestDto.FlightNumber,
@@ -230,6 +275,30 @@ namespace GatewayService.Controllers
                     Privilege = privilegeInfo
                 };
                 
+                var message = new Message<Null, string>
+                {
+                    Value = JsonSerializer.Serialize(new
+                    {
+                        EventType = "TicketPurchased",
+                        Timestamp = DateTime.UtcNow,
+                        Username = username,
+                        Payload = JsonSerializer.Serialize(new { requestDto.FlightNumber, requestDto.Price })
+                    })
+                };
+                
+                var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
+                    .WaitAsync(TimeSpan.FromSeconds(120));
+                
+                return Ok(response);
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Kafka timeout, but ticket was purchased");
+                return Ok(response);
+            }
+            catch (ProduceException<Null, string> ex)
+            {
+                _logger.LogError(ex, "Failed to produce Kafka message");
                 return Ok(response);
             }
             catch (Exception ex)
@@ -264,6 +333,7 @@ namespace GatewayService.Controllers
                 if (!string.IsNullOrEmpty(authHeader))
                     request.Headers.Add("Authorization", authHeader);
                 
+                var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
                 var response = await _ticketsClient.SendAsync(request);
                 
                 // запрос к бонусам для отката траты/получения
@@ -296,7 +366,21 @@ namespace GatewayService.Controllers
                             Api = "/api/v1/privilege/return-balance",
                             HttpMethod = HttpMethod.Post,
                             Body = body,
+                            AccessToken = token
                         });
+                        
+                        var message = new Message<Null, string>
+                        {
+                            Value = JsonSerializer.Serialize(new
+                            {
+                                EventType = "TicketReturned",
+                                Timestamp = DateTime.UtcNow,
+                                Username = username,
+                                Payload = JsonSerializer.Serialize(new { ticketUid })
+                            })
+                        };
+                        var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
+                            .WaitAsync(TimeSpan.FromSeconds(5));
                     }
                     catch (Exception _)
                     {
@@ -310,11 +394,22 @@ namespace GatewayService.Controllers
                             Api = "/api/v1/privilege/return-balance",
                             HttpMethod = HttpMethod.Post,
                             Body = body,
+                            AccessToken = token
                         });
                     }
                     
                 }
                 
+                return NoContent();
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Kafka timeout, but ticket was purchased");
+                return NoContent();
+            }
+            catch (ProduceException<Null, string> ex)
+            {
+                _logger.LogError(ex, "Failed to produce Kafka message");
                 return NoContent();
             }
             catch (Exception ex)
@@ -430,6 +525,7 @@ namespace GatewayService.Controllers
         [HttpPost("privilege/update-balance")]
         public async Task<IActionResult> UpdatePrivilegeInfo([FromBody] UpdateBalanceHistoryRequest historyRequest)
         {
+            PrivilegeInfoResponse privilegeInfo = null;
             try
             {
                 GetUsernameFromToken();
@@ -449,7 +545,31 @@ namespace GatewayService.Controllers
                     return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
                 
                 var content = await response.Content.ReadAsStringAsync();
-                var privilegeInfo = JsonSerializer.Deserialize<PrivilegeInfoResponse>(content);
+                privilegeInfo = JsonSerializer.Deserialize<PrivilegeInfoResponse>(content);
+                
+                var message = new Message<Null, string>
+                {
+                    Value = JsonSerializer.Serialize(new
+                    {
+                        EventType = "BonusBalanceWasUpdated",
+                        Timestamp = DateTime.UtcNow,
+                        Username =  GetUsernameFromToken(),
+                        Payload = JsonSerializer.Serialize(new { historyRequest.TicketUid, historyRequest.BalanceDiff, historyRequest.OperationType })
+                    })
+                };
+                var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
+                    .WaitAsync(TimeSpan.FromSeconds(5));
+                
+                return Ok(privilegeInfo);
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Kafka timeout, but ticket was purchased");
+                return Ok(privilegeInfo);
+            }
+            catch (ProduceException<Null, string> ex)
+            {
+                _logger.LogError(ex, "Failed to produce Kafka message");
                 return Ok(privilegeInfo);
             }
             catch (Exception ex)

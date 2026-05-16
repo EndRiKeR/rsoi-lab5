@@ -29,24 +29,26 @@ builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
         options.SetAuthorizationEndpointUris("/connect/authorize")
-               .SetTokenEndpointUris("/connect/token")
-               .SetUserInfoEndpointUris("/connect/userinfo");
+                .SetTokenEndpointUris("/connect/token")
+                .SetUserInfoEndpointUris("/connect/userinfo")
 
-        options.AllowAuthorizationCodeFlow()
-            .AllowPasswordFlow();
+                .SetIssuer(new Uri("http://identity-service:8090"))
 
-        options.RegisterScopes(OpenIddictConstants.Scopes.OpenId,
+                .AllowAuthorizationCodeFlow()
+                .AllowPasswordFlow()
+
+                .RegisterScopes(OpenIddictConstants.Scopes.OpenId,
                                OpenIddictConstants.Scopes.Profile,
-                               OpenIddictConstants.Scopes.Email);
-
-        options.AddDevelopmentEncryptionCertificate()
-               .AddDevelopmentSigningCertificate();
-
-        options.UseAspNetCore()
-            .EnableAuthorizationEndpointPassthrough()
-            .EnableTokenEndpointPassthrough()
-            .EnableUserInfoEndpointPassthrough()
-            .DisableTransportSecurityRequirement();
+                               OpenIddictConstants.Scopes.Email)
+               
+                .AddDevelopmentSigningCertificate()
+                .AddEphemeralEncryptionKey()
+                .DisableAccessTokenEncryption()
+                .UseAspNetCore()
+                .EnableAuthorizationEndpointPassthrough()
+                .EnableTokenEndpointPassthrough()
+                .EnableUserInfoEndpointPassthrough()
+                .DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
     {
@@ -107,8 +109,7 @@ using (var scope = app.Services.CreateScope())
             OpenIddictConstants.Permissions.ResponseTypes.Code,
             OpenIddictConstants.Permissions.GrantTypes.Password,
             OpenIddictConstants.Permissions.Scopes.Profile,
-            OpenIddictConstants.Permissions.Scopes.Email,
-            OpenIddictConstants.Permissions.Prefixes.Scope + "api1"
+            OpenIddictConstants.Permissions.Scopes.Email
         },
         RedirectUris = { new Uri("http://localhost:8080/api/v1/callback") },
         PostLogoutRedirectUris = { new Uri("http://localhost:8080") }
@@ -128,6 +129,17 @@ using (var scope = app.Services.CreateScope())
         {
             await userManager.AddToRoleAsync(user, "User");
         }
+    }
+    
+    var admin = await userManager.FindByNameAsync("admin");
+    if (admin == null)
+    {
+        admin = new ApplicationUser { UserName = "admin", Email = "admin@example.com" };
+        await userManager.CreateAsync(admin, "6Pm-GuZ-LeN-Zqy");
+    }
+    if (!await userManager.IsInRoleAsync(admin, "Admin"))
+    {
+        await userManager.AddToRoleAsync(admin, "Admin");
     }
 }
 

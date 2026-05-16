@@ -12,7 +12,7 @@ using TicketsService.Database.Models;
 using TicketsService.Database.Repositories;
 using Xunit;
 
-namespace Services.UnitTests;
+namespace UniTests;
 
 public class RepositoriesUnitTests
 {

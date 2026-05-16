@@ -1,19 +1,22 @@
+using Common.DtoModels;
+using IdentityService.Database.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using IdentityService.Database.Models;
 
-namespace IdentityService.Controller;
+namespace IdentityService.Controllers;
 
 [ApiController]
 [Route("api/accounts")]
 public class AccountController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(UserManager<ApplicationUser> userManager)
+    public AccountController(UserManager<ApplicationUser> userManager, ILogger<AccountController> logger)
     {
         _userManager = userManager;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -25,9 +28,13 @@ public class AccountController : ControllerBase
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, "User");
+            _logger.LogInformation($"User '{model.Username}' registered successfully.");
             return Ok();
         }
-        return BadRequest(result.Errors);
+
+        var errors = result.Errors.Select(e => e.Description).ToList();
+        _logger.LogInformation($"Registration failed for '{model.Username}': {string.Join(", ", errors)}");
+        return BadRequest(new { errors });
     }
 
     [HttpPost("create-admin")]

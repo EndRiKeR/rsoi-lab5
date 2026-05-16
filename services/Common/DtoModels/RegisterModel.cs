@@ -1,4 +1,4 @@
-namespace IdentityService.Database.Models;
+namespace Common.DtoModels;
 
 public class RegisterModel
 {
