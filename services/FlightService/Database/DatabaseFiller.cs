@@ -58,18 +58,40 @@ public class DatabaseFiller
 
     private async Task AddFlight()
     {
-        var dateTime = new DateTime(2021, 10, 8, 20, 0, 0);
+        var dateTime1 = new DateTime(2026, 05, 23, 20, 0, 0);
+        var dateTime2 = new DateTime(2026, 05, 26, 18, 30, 0);
+        var dateTime3 = new DateTime(2026, 05, 29, 16, 45, 0);
         
-        var flight = new Flight()
-        {
-            Id = 1,
-            FlightNumber = "AFL031",
-            DateTime = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
-            Price = 1500,
-            FromAirportId = 2,
-            ToAirportId = 1
+        var flight = new List<Flight> {
+            new Flight{
+                Id = 1,
+                FlightNumber = "AFL031",
+                DateTime = DateTime.SpecifyKind(dateTime1, DateTimeKind.Utc),
+                Price = 1500,
+                FromAirportId = 2,
+                ToAirportId = 1,
+                AvailableSeats = 160,
+            },
+            new Flight{
+                Id = 2,
+                FlightNumber = "AFL259",
+                DateTime = DateTime.SpecifyKind(dateTime2, DateTimeKind.Utc),
+                Price = 2600,
+                FromAirportId = 2,
+                ToAirportId = 1,
+                AvailableSeats = 100,
+            },
+            new Flight{
+                Id = 3,
+                FlightNumber = "AFL946",
+                DateTime = DateTime.SpecifyKind(dateTime3, DateTimeKind.Utc),
+                Price = 9600,
+                FromAirportId = 1,
+                ToAirportId = 2,
+                AvailableSeats = 120,
+            }
         };
         
-        await _flightRepository.Add(flight);
+        await _flightRepository.AddList(flight);
     }
 }

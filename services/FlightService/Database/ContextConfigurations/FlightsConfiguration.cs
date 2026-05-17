@@ -22,6 +22,9 @@ public class FlightsConfiguration : IEntityTypeConfiguration<Flight>
 
         builder.Property(e => e.Price)
             .IsRequired();
+        
+        builder.Property(e => e.AvailableSeats)
+            .IsRequired();
 
         builder.HasOne(f => f.FromAirport)
             .WithMany(a => a.DepartureFlights)

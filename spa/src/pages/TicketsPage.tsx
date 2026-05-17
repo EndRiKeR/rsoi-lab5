@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const TicketsPage = () => {
     const { token } = useAuth();
     const [tickets, setTickets] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -18,9 +19,12 @@ const TicketsPage = () => {
         try {
             await returnTicket(ticketUid);
             alert('Билет возвращен');
-            setTickets(prev => prev.filter(t => t.ticketUid !== ticketUid));
+            const data = await getUserTickets();
+            setTickets(data || []);
         } catch (err: any) {
             alert(`Ошибка: ${err.response?.data?.message || err.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -45,7 +49,7 @@ const TicketsPage = () => {
                             <td>{t.status}</td>
                             <td>
                                 {t.status === 'PAID' && (
-                                    <button onClick={() => handleReturn(t.ticketUid)}>Вернуть</button>
+                                    <button disabled={loading} onClick={() => handleReturn(t.ticketUid)}>Вернуть</button>
                                 )}
                             </td>
                         </tr>

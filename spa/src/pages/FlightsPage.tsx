@@ -19,13 +19,23 @@ const FlightsPage = () => {
         })();
     }, [page, token]);
 
-    const handleBuy = async (flightNumber: string, price: number, paidFromBalance: boolean) => {
+    const handleBuy = async (flightNumber: string, price: number, paidFromBalance: boolean, availableSeats: number) => {
+        if (availableSeats <= 0) {
+            alert('На этот рейс больше нет билетов.');
+            return;
+        }
         try {
             const result = await buyTicket(flightNumber, price, paidFromBalance);
             alert(`Билет куплен! UID: ${result.ticketUid}`);
-            // обновить список рейсов или перейти в билеты
+            // Обновить список рейсов, чтобы отразить уменьшение мест
+            const data = await getFlights(page, size);
+            setFlights(data.items || []);
+            setTotal(data.totalElements || 0);
         } catch (err: any) {
-            alert(`Ошибка: ${err.response?.data?.message || err.message}`);
+            const message = err.response?.data?.message || err.response?.status === 409
+                ? 'Билетов больше нет.'
+                : err.message;
+            alert(`Ошибка: ${message}`);
         }
     };
 
@@ -42,6 +52,7 @@ const FlightsPage = () => {
                     <th>Куда</th>
                     <th>Дата</th>
                     <th>Цена</th>
+                    <th>Осталось мест</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -53,8 +64,15 @@ const FlightsPage = () => {
                         <td>{f.toAirport}</td>
                         <td>{new Date(f.date).toLocaleString()}</td>
                         <td>{f.price} руб.</td>
+                        <td>{f.availableSeats}</td>
                         <td>
-                            <button onClick={() => handleBuy(f.flightNumber, f.price, false)}>Купить</button>
+                            <button
+                                onClick={() => handleBuy(f.flightNumber, f.price, false, f.availableSeats)}
+                                disabled={f.availableSeats <= 0}
+                                style={{ opacity: f.availableSeats <= 0 ? 0.5 : 1 }}
+                            >
+                                Купить
+                            </button>
                         </td>
                     </tr>
                 ))}

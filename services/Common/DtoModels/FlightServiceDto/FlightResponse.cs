@@ -18,5 +18,8 @@ namespace Common.DtoModels.FlightServiceDto
         
         [JsonPropertyName("price")]
         public int Price { get; set; }
+        
+        [JsonPropertyName("availableSeats")]
+        public int AvailableSeats { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using Common.CircuitBreaker;
@@ -233,63 +232,88 @@ namespace GatewayService.Controllers
                     async () => await SendRequest<FlightResponse>(_flightsClient, flightRequest)
                 );
                 
-                // пытаемся создать запись о новом билете
-                // нет - ошибка
-                var addTicketRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/tickets/")
+                // -1 билет
+                var reserveRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/flights/{requestDto.FlightNumber}/reserve");
+                if (!string.IsNullOrEmpty(authHeader))
+                    reserveRequest.Headers.Add("Authorization", authHeader);
+
+                var reserveResponse = await _flightsClient.SendAsync(reserveRequest);
+                if (!reserveResponse.IsSuccessStatusCode)
                 {
-                    Content = JsonContent.Create(new TicketAddRequest
+                    var reserveError = await reserveResponse.Content.ReadAsStringAsync();
+                    return StatusCode((int)reserveResponse.StatusCode, reserveError);
+                }
+
+                try
+                {
+                    // пытаемся создать запись о новом билете
+                    // нет - ошибка
+                    var addTicketRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/tickets/")
+                    {
+                        Content = JsonContent.Create(new TicketAddRequest
+                        {
+                            TicketUid = ticketUid,
+                            FlightNumber = requestDto.FlightNumber,
+                            Username = username,
+                            Price = requestDto.Price,
+                            Status = "PAID"
+                        })
+                    };
+                    if (!string.IsNullOrEmpty(authHeader))
+                        addTicketRequest.Headers.Add("Authorization", authHeader);
+                    
+                    TicketAddResponse? ticketResponse = await _circuitBreakersController.ExecuteAsync(
+                        Services.Ticket,
+                        async () => await SendRequest<TicketAddResponse>(_ticketsClient, addTicketRequest)
+                    );
+
+                    isTicketAdded = true;
+                    
+                    // если оплачиваем бонусами - запросик к бонусам
+                    // нет - ошибка + удаляем добавленный билет
+                    var (paidByBonuses, paidByMoney) = await CalculatePayment(requestDto.Price, requestDto.PaidFromBalance, username);
+                    var privilegeInfo = await UpdateBonusBalance(username, ticketUid, paidByBonuses, requestDto.Price);
+                    
+                    response = new TicketPurchaseResponse
                     {
                         TicketUid = ticketUid,
                         FlightNumber = requestDto.FlightNumber,
-                        Username = username,
+                        FromAirport = flightResponse.FromAirport,
+                        ToAirport = flightResponse.ToAirport, 
+                        Date = DateTime.Now,
                         Price = requestDto.Price,
-                        Status = "PAID"
-                    })
-                };
-                if (!string.IsNullOrEmpty(authHeader))
-                    addTicketRequest.Headers.Add("Authorization", authHeader);
-                
-                TicketAddResponse? ticketResponse = await _circuitBreakersController.ExecuteAsync(
-                    Services.Ticket,
-                    async () => await SendRequest<TicketAddResponse>(_ticketsClient, addTicketRequest)
-                );
-
-                isTicketAdded = true;
-                
-                // если оплачиваем бонусами - запросик к бонусам
-                // нет - ошибка + удаляем добавленный билет
-                var (paidByBonuses, paidByMoney) = await CalculatePayment(requestDto.Price, requestDto.PaidFromBalance, username);
-                var privilegeInfo = await UpdateBonusBalance(username, ticketUid, paidByBonuses, requestDto.Price);
-                
-                response = new TicketPurchaseResponse
-                {
-                    TicketUid = ticketUid,
-                    FlightNumber = requestDto.FlightNumber,
-                    FromAirport = flightResponse.FromAirport,
-                    ToAirport = flightResponse.ToAirport, 
-                    Date = DateTime.Now,
-                    Price = requestDto.Price,
-                    PaidByMoney = paidByMoney,
-                    PaidByBonuses = paidByBonuses,
-                    Status = "PAID",
-                    Privilege = privilegeInfo
-                };
-                
-                var message = new Message<Null, string>
-                {
-                    Value = JsonSerializer.Serialize(new
+                        PaidByMoney = paidByMoney,
+                        PaidByBonuses = paidByBonuses,
+                        Status = "PAID",
+                        Privilege = privilegeInfo
+                    };
+                    
+                    var message = new Message<Null, string>
                     {
-                        EventType = "TicketPurchased",
-                        Timestamp = DateTime.UtcNow,
-                        Username = username,
-                        Payload = JsonSerializer.Serialize(new { requestDto.FlightNumber, requestDto.Price })
-                    })
-                };
-                
-                var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
-                    .WaitAsync(TimeSpan.FromSeconds(120));
-                
-                return Ok(response);
+                        Value = JsonSerializer.Serialize(new
+                        {
+                            EventType = "TicketPurchased",
+                            Timestamp = DateTime.UtcNow,
+                            Username = username,
+                            Payload = JsonSerializer.Serialize(new { requestDto.FlightNumber, requestDto.Price })
+                        })
+                    };
+                    
+                    var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
+                        .WaitAsync(TimeSpan.FromSeconds(120));
+                    
+                    return Ok(response);
+                }
+                catch (Exception)
+                {
+                    // откатываем резерв при ошибке
+                    var releaseRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/flights/{requestDto.FlightNumber}/release");
+                    if (!string.IsNullOrEmpty(authHeader))
+                        releaseRequest.Headers.Add("Authorization", authHeader);
+                    await _flightsClient.SendAsync(releaseRequest);
+
+                    throw;
+                }
             }
             catch (TimeoutException)
             {
@@ -324,32 +348,31 @@ namespace GatewayService.Controllers
         {
             try
             {
-                // обновить статус билета
-                // нет - ошибка
                 var username = GetUsernameFromToken();
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/tickets/{ticketUid}");
-                
                 var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                var token = authHeader?.Replace("Bearer ", "");
+
+                var ticketInfoRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/tickets/{ticketUid}");
+                if (!string.IsNullOrEmpty(authHeader))
+                    ticketInfoRequest.Headers.Add("Authorization", authHeader);
+                var ticketInfoResponse = await _ticketsClient.SendAsync(ticketInfoRequest);
+                var ticketInfoJson = await ticketInfoResponse.Content.ReadAsStringAsync();
+                var ticketInfo = JsonSerializer.Deserialize<TicketResponse>(ticketInfoJson);
+                var flightNumber = ticketInfo?.FlightNumber;
+
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/tickets/{ticketUid}");
                 if (!string.IsNullOrEmpty(authHeader))
                     request.Headers.Add("Authorization", authHeader);
-                
-                var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+
                 var response = await _ticketsClient.SendAsync(request);
-                
-                // запрос к бонусам для отката траты/получения
-                // нет - все ок + бесконечный ретрай запроса
+
                 if (response.IsSuccessStatusCode)
                 {
-                    ReturnBalanceHistoryRequest body = new ReturnBalanceHistoryRequest()
-                    {
-                        TicketUid = ticketUid,
-                    };
-                    
-                    var bonusRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/privilege/return-balance")
+                    ReturnBalanceHistoryRequest body = new ReturnBalanceHistoryRequest() { TicketUid = ticketUid };
+                    var bonusRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/privilege/return-balance")
                     {
                         Content = JsonContent.Create(body)
                     };
-                    
                     if (!string.IsNullOrEmpty(authHeader))
                         bonusRequest.Headers.Add("Authorization", authHeader);
 
@@ -368,19 +391,6 @@ namespace GatewayService.Controllers
                             Body = body,
                             AccessToken = token
                         });
-                        
-                        var message = new Message<Null, string>
-                        {
-                            Value = JsonSerializer.Serialize(new
-                            {
-                                EventType = "TicketReturned",
-                                Timestamp = DateTime.UtcNow,
-                                Username = username,
-                                Payload = JsonSerializer.Serialize(new { ticketUid })
-                            })
-                        };
-                        var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
-                            .WaitAsync(TimeSpan.FromSeconds(5));
                     }
                     catch (Exception _)
                     {
@@ -397,9 +407,33 @@ namespace GatewayService.Controllers
                             AccessToken = token
                         });
                     }
-                    
+
+                    try
+                    {
+                        var releaseRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/flights/{flightNumber}/release");
+                        if (!string.IsNullOrEmpty(authHeader))
+                            releaseRequest.Headers.Add("Authorization", authHeader);
+                        await _flightsClient.SendAsync(releaseRequest);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to release seat for flight {FlightNumber}", flightNumber);
+                    }
+
+                    var message = new Message<Null, string>
+                    {
+                        Value = JsonSerializer.Serialize(new
+                        {
+                            EventType = "TicketReturned",
+                            Timestamp = DateTime.UtcNow,
+                            Username = username,
+                            Payload = JsonSerializer.Serialize(new { ticketUid })
+                        })
+                    };
+                    var deliveryResult = await _producer.ProduceAsync("rsoi-events", message, CancellationToken.None)
+                        .WaitAsync(TimeSpan.FromSeconds(5));
                 }
-                
+
                 return NoContent();
             }
             catch (TimeoutException)
@@ -416,10 +450,10 @@ namespace GatewayService.Controllers
             {
                 if (ex is ServerDiedException)
                     return StatusCode(503, new ErrorResponse { Message = ex.Message });
-                
+
                 if (ex is UnauthorizedAccessException)
                     return StatusCode(401, new ErrorResponse { Message = ex.Message });
-                
+
                 return StatusCode(500, new ErrorResponse { Message = ex.Message });
             }
         }

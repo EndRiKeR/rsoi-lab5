@@ -1,9 +1,9 @@
 ﻿using Common.DtoModels.ErrorDto;
 using Common.DtoModels.FlightServiceDto;
-using FlightService.Database.Models;
 using FlightService.Database.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightService.Controllers
 {
@@ -20,6 +20,58 @@ namespace FlightService.Controllers
             _flightRepository = flightRepository;
             _airportRepository = airportRepository;
         }
+        
+        [HttpPost("{flightNumber}/reserve")]
+        [Authorize]
+        public async Task<IActionResult> ReserveSeat([FromRoute] string flightNumber)
+        {
+            try
+            {
+                var flights = await _flightRepository.GetFlightsByFlightNumber(flightNumber);
+                var flight = flights[0];
+                
+                if (flight.AvailableSeats <= 0)
+                    return Conflict(new ErrorResponse { Message = "Билетов на этот рейс больше нет." });
+
+                flight.AvailableSeats--;
+                await _flightRepository.Update(flight);
+                
+                return Ok();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return Conflict(new ErrorResponse { Message = "Не удалось зарезервировать место из-за одновременного запроса. Попробуйте ещё раз." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ErrorResponse { Message = ex.Message });
+            }
+        }
+        
+        [HttpPost("{flightNumber}/release")]
+        [Authorize]
+        public async Task<IActionResult> ReleaseSeat([FromRoute] string flightNumber)
+        {
+            try
+            {
+                var flights = await _flightRepository.GetFlightsByFlightNumber(flightNumber);
+                var flight = flights[0];
+
+                flight.AvailableSeats++;
+                await _flightRepository.Update(flight);
+                
+                return Ok();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return Conflict(new ErrorResponse { Message = "Не удалось зарезервировать место из-за одновременного запроса. Попробуйте ещё раз." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ErrorResponse { Message = ex.Message });
+            }
+        }
+        
         
         [HttpGet]
         [Authorize]
@@ -59,7 +111,8 @@ namespace FlightService.Controllers
                         FromAirport = fromAirportName,
                         ToAirport = toAirportName,
                         Date = flight.DateTime,
-                        Price = flight.Price
+                        Price = flight.Price,
+                        AvailableSeats = flight.AvailableSeats
                     });
                 }
                 
@@ -113,45 +166,11 @@ namespace FlightService.Controllers
                     FromAirport = fromAirportName,
                     ToAirport = toAirportName,
                     Date = flight.DateTime,
-                    Price = flight.Price
+                    Price = flight.Price,
+                    AvailableSeats = flight.AvailableSeats
                 };
                 
                 return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ErrorResponse { Message = ex.Message });
-            }
-        }
-        
-        [HttpPost("fillDB")]
-        public async Task<IActionResult> FillDatabase()
-        {
-            try
-            {
-                var airports = new List<Airport>
-                {
-                    new Airport { Name = "Шереметьево", City = "Москва", Country = "Россия" },
-                    new Airport { Name = "Пулково", City = "Санкт-Петербург", Country = "Россия" }
-                };
-                
-                await _airportRepository.AddList(airports);
-                
-                var flights = new List<Flight>
-                {
-                    new Flight
-                    {
-                        FlightNumber = "AFL031",
-                        DateTime = DateTime.Parse("2021-10-08 20:00"),
-                        FromAirportId = airports[1].Id,
-                        ToAirportId = airports[0].Id,
-                        Price = 1500
-                    }
-                };
-                
-                await _flightRepository.AddList(flights);
-                
-                return Ok("Test data created successfully");
             }
             catch (Exception ex)
             {

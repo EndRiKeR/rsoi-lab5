@@ -52,8 +52,13 @@ var app = builder.Build();
 var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 var context = services.GetRequiredService<FlightContext>();
-context.Database.GetPendingMigrations();
-context.Database.Migrate();
+
+// TODO: удалить
+context.Database.EnsureDeleted();
+context.Database.EnsureCreated();
+
+// context.Database.GetPendingMigrations();
+// context.Database.Migrate();
 
 var filler = services.GetRequiredService<DatabaseFiller>();
 await filler.AddTestData();

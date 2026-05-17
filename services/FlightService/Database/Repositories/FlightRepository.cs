@@ -130,6 +130,7 @@ public class FlightRepository : IFlightRepository
             existingFlight.Price = flight.Price;
             existingFlight.FromAirportId = flight.FromAirportId;
             existingFlight.ToAirportId = flight.ToAirportId;
+            existingFlight.AvailableSeats = flight.AvailableSeats;
 
             await _context.SaveChangesAsync();
             
@@ -206,5 +207,28 @@ public class FlightRepository : IFlightRepository
             Console.WriteLine(e);
             throw;
         }
+    }
+    
+    public async Task<bool> TryReserveSeat(string flightNumber)
+    {
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            var flight = await _context.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber);
+            if (flight == null) return false;
+            if (flight.AvailableSeats <= 0) return false;
+
+            flight.AvailableSeats--;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Кто-то уже изменил запись – повторяем
+            }
+        }
+        return false;
     }
 }
