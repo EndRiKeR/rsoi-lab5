@@ -8,5 +8,5 @@ export async function getStatistics(from?: string, to?: string) {
         headers: { Authorization: `Bearer ${token}` },
         params: { from, to }
     });
-    return res.data; // массив событий
+    return res.data;
 }

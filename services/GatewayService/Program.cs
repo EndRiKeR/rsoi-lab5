@@ -50,7 +50,7 @@ builder.Services.AddSingleton<IProducer<Null, string>>(sp =>
 {
     var config = new ProducerConfig
     {
-        BootstrapServers = "http://kafka:9092"
+        BootstrapServers = "kafka:9092"
     };
     return new ProducerBuilder<Null, string>(config).Build();
 });

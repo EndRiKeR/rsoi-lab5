@@ -20,7 +20,6 @@ livenessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
 
-
 readinessProbe:
   httpGet:
     path: /manage/health

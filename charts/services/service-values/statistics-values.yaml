@@ -11,7 +11,7 @@ env:
   - name: DOCKER_CONNECT_STRING
     value: "Host=postgres;Port=5432;Database=statistics;Username=postgres;Password=postgres"
   - name: Kafka__BootstrapServers
-    value: "http://kafka:9092"
+    value: "kafka:9092"
 
 livenessProbe:
   httpGet:
