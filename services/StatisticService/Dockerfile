@@ -5,4 +5,4 @@ COPY services/Common/ ./Common/
 WORKDIR /app/StatisticService
 RUN dotnet publish -c Release -o ./publish
 WORKDIR /app/StatisticService/publish
-ENTRYPOINT ["dotnet", "StatisticsService.dll"]
+ENTRYPOINT ["dotnet", "StatisticService.dll"]

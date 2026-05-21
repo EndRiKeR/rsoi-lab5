@@ -1,5 +1,7 @@
-minikube stop
-minikube delete --all
+#!/bin/bash
+
+#minikube stop
+#minikube delete --all
 
 minikube start --driver=docker --cpus=4 --memory=6144
 
