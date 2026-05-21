@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
+using OpenIddict.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 

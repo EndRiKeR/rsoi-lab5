@@ -1,8 +1,8 @@
-fullnameOverride: statistics-service
+fullnameOverride: statistic-service
 
 image:
-  repository: ""
-  tag: "latest"
+  repository: "statistic-service"
+  pullPolicy: "IfNotPresent"
 
 service:
   port: 8100

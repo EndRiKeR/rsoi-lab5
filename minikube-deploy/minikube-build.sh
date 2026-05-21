@@ -16,40 +16,44 @@ minikube image load flight-service:$TAG
 minikube image load identity-service:$TAG
 minikube image load statistic-service:$TAG
 
-kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
+#kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
 
-helm upgrade postgres ./charts/postgres --install --namespace test -f ./charts/postgres/values.yaml
-kubectl apply -f ./charts/postgres/templates/config-map.yaml -n test
+# postgres
+#helm upgrade postgres ./charts/postgres --install --namespace test \
+#  -f ./charts/postgres/values.yaml
+#  
+#kubectl apply -f ./charts/postgres/templates/config-map.yaml -n test
+#
+#kubectl wait -n test -l app.kubernetes.io/instance=postgres pod --for=condition=Ready --timeout=120s
 
-kubectl wait -n test -l app.kubernetes.io/instance=postgres pod --for=condition=Ready --timeout=120s
+# kafka
+helm install kafka ./charts/kafka --namespace test
+  
+# other services
 
 helm upgrade identity-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/identity-values.yaml \
-  --set image.repository=identity-service \
-  --set image.tag=$TAG \
-  --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
   
 helm upgrade statistic-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/statistic-values.yaml \
-  --set image.repository=statistic-service \
-  --set image.tag=$TAG \
-  --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
 
 helm upgrade bonus-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/bonus-values.yaml \
-  --set image.repository=bonus-service --set image.tag=$TAG --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
 
 helm upgrade flight-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/flight-values.yaml \
-  --set image.repository=flight-service --set image.tag=$TAG --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
 
 helm upgrade tickets-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/tickets-values.yaml \
-  --set image.repository=tickets-service --set image.tag=$TAG --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
 
 helm upgrade gateway-service ./charts/services --install --namespace test \
   -f ./charts/services/service-values/gateway-values.yaml \
-  --set image.repository=gateway-service --set image.tag=$TAG --set image.pullPolicy=IfNotPresent
+  --set image.tag=$TAG
 
 kubectl rollout restart deployment -n test
 
@@ -60,4 +64,4 @@ kubectl wait -n test -l app.kubernetes.io/instance=tickets-service pod --for=con
 kubectl wait -n test -l app.kubernetes.io/instance=gateway-service pod --for=condition=Ready --timeout=180s
 kubectl wait -n test -l app.kubernetes.io/instance=statistic-service pod --for=condition=Ready --timeout=180s
 
-kubectl get pods -n test -w
+kubectl get pods -n test

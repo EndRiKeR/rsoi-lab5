@@ -1,8 +1,8 @@
 fullnameOverride: flight-service
 
 image:
-  repository: ""
-  tag: "latest"
+  repository: "flight-service"
+  pullPolicy: "IfNotPresent"
 
 service:
   port: 8060

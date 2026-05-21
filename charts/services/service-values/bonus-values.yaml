@@ -1,8 +1,8 @@
 fullnameOverride: bonus-service
 
 image:
-  repository: ""
-  tag: "latest"
+  repository: "bonus-service"
+  pullPolicy: "IfNotPresent"
 
 service:
   port: 8050
