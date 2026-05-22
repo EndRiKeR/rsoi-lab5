@@ -3,7 +3,7 @@ set -e
 
 #minikube stop
 #minikube delete --all
-minikube start --cpus=4 --memory=6144 --driver=docker
+minikube start --cpus=8 --memory=6144 --driver=docker
 minikube addons enable ingress
 
 minikube tunnel > /dev/null 2>&1 &

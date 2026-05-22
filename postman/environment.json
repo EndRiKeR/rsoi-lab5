@@ -1,29 +1,54 @@
 {
-	"id": "acc90f86-88ad-444e-924e-6f48f6ee7711",
-	"name": "[rsoi][lab5] Flight Service",
-	"values": [
-		{
-			"key": "serviceUrl",
-			"value": "http://localhost",
-			"enabled": true
-		},
-		{
-			"key": "identityProviderUrl",
-			"value": "http://localhost:8090",
-			"enabled": true
-		},
-		{
-			"key": "username",
-			"value": "rsoi_user",
-			"enabled": true
-		},
-		{
-			"key": "password",
-			"value": "6Pm-GuZ-LeN-Zqy",
-			"enabled": true
-		}
-	],
-	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2021-10-15T18:17:23.977Z",
-	"_postman_exported_using": "Postman/9.0.5"
+  "_": {
+    "postman_variable_scope": "environment",
+    "postman_exported_at": "2026-05-22T14:29:48.637Z",
+    "postman_exported_using": "Newman/6.2.2"
+  },
+  "id": "acc90f86-88ad-444e-924e-6f48f6ee7711",
+  "name": "[rsoi][lab5] Flight Service",
+  "values": [
+    {
+      "type": "any",
+      "value": "http://localhost",
+      "key": "serviceUrl"
+    },
+    {
+      "type": "any",
+      "value": "http://localhost:8090",
+      "key": "identityProviderUrl"
+    },
+    {
+      "type": "any",
+      "value": "rsoi_user",
+      "key": "username"
+    },
+    {
+      "type": "any",
+      "value": "6Pm-GuZ-LeN-Zqy",
+      "key": "password"
+    },
+    {
+      "type": "any",
+      "value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFGQjJBNTk2MTcxRTBEODFERjZCRjIxNDE2MDREMTE0NUVCMEM2MUQiLCJ4NXQiOiJIN0tsbGhjZURZSGZhX0lVRmdUUkZGNnd4aDAiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwOi8vaWRlbnRpdHktc2VydmljZTo4MDkwLyIsImV4cCI6MTc3OTQ2MzczNCwiaWF0IjoxNzc5NDYwMTM0LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwianRpIjoiYzljMjZjNDAtNjc0Ni00MjU0LTg1ZDctMzc4MWNjZjkwZjM0Iiwic3ViIjoiMjgzZmQ5MWItMGYwZi00YTNkLWFiNmEtZmY0ZmM4ZDhlOTRlIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVXNlciIsIm9pX3Byc3QiOiJlbmRyaWtlci1yc29pLWFwaSIsImNsaWVudF9pZCI6ImVuZHJpa2VyLXJzb2ktYXBpIiwib2lfdGtuX2lkIjoiMDE2NWY2N2EtMjYyOC00N2UxLWIxZjYtMzMwMGRkMmMzMjU3In0.TCU6TnkqlKAQDwUtv50Hrqk719sBumXOVQg3Yl9Gj3L29OIBBwH3ki2mf4m8N744hPGHenA8tx0_4Cq5aDiE3d0DGu4algoQUM3aUEVDEKNPYOFgkZgGPYlswbwfiEXg_bD1jeJxGx0sTc0kyLS_Cb5m3RIC1Gbn713u5ur0J9m2Tf2a3ydrermGJ2htPlVh1s9o7uMl099eQnbVq4Ya538qqkPjmDHteNLUEXEIjjW7f1IMW8VWQ7M0vsjq1ROKTICoZ3TA3u2b6tQJmcgsJ7s0yfXqfwvNyn3QKTYizVIabf4qiYZh19kfwZW1Al-HuX19taysqDO4bm6UBt5Hn01nkQTkPQw85s6K8xr4UVB6_JdxhSZ4IjWzuEuqtAViyiocOCz0YBiHeaIohvJVo-aa0tlQclbLBJuaGBeYBOnys-ggwX3Mbwa3-vLvegfmjJ_yWCx6OElA5UW219AoDGpOSr3Y-aF9IuIfI7pNyRZrZX9bsxgP4l3niy1JQkT4K3Y5ofkAkk796Z-zkdm3_7B7PYT3J3skpCXB7CWYZ1XmhnKENo_pGDtpdj-XzXpXh7BGqNhuW4ySc8bVKsMb5JMF_mQjOjFL5ZBH6dtzECfJJV6td_HRRktnm871K3m0swDKzGGusIU4Fal9wio1I22iN1TCImqYSR1KgQW0UaA",
+      "key": "authorizationToken"
+    },
+    {
+      "type": "any",
+      "value": "AFL031",
+      "key": "flightNumber"
+    },
+    {
+      "type": "any",
+      "value": 0,
+      "key": "balance"
+    },
+    {
+      "type": "any",
+      "value": "51196e6d-67ca-43cb-bdab-532e07f8a780",
+      "key": "ticketUid"
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-05-22T14:30:24.024Z",
+  "_postman_exported_using": "Newman/6.2.2"
 }
